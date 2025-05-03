@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="🏌️ Golf Match - Manual Input", layout="wide")
-st.title("🏌️ 高爾夫一對多比分系統（手動輸入）")
+st.title("🏌️ 高爾夫一對多比分系統（手動輸入 + 讓桿 + 賭金計算）")
 
 # ========== 載入資料 ==========
 @st.cache_data
@@ -69,27 +69,60 @@ if len(selected_players) >= 2:
             scores[p] = []
 
     # ========== 指定主角 ==========
-    st.header("4️⃣ 選擇主要選手並計算比分")
+    st.header("4️⃣ 選擇主要選手")
     main_player = st.selectbox("指定主要選手", selected_players)
 
-    # ========== 比分結果顯示 ==========
-    if st.button("✅ 產生比分結果"):
+    if st.button("✅ 計算對戰結果與賭金"):
         if all(len(s) == 18 for s in scores.values()):
-            st.success("比賽結果如下：")
+            st.success(f"🎯 {main_player} 對戰結果如下：")
+            results = []
+
+            main_handicap = player_info[main_player]["hcp"]
+            main_score = scores[main_player]
+
             for opp in selected_players:
                 if opp == main_player:
                     continue
-                main_score = scores[main_player]
-                opp_score = scores[opp]
-                wins = sum(1 for m, o in zip(main_score, opp_score) if m < o)
-                losses = sum(1 for m, o in zip(main_score, opp_score) if m > o)
-                ties = 18 - wins - losses
 
-                st.markdown(f"""
-                ### 📊 {main_player} vs {opp}
-                - 🏆 {main_player} 勝洞數：{wins}
-                - 🏆 {opp} 勝洞數：{losses}
-                - ⚖️ 平手洞數：{ties}
-                """)
+                opp_handicap = player_info[opp]["hcp"]
+                opp_score = scores[opp]
+                opp_bet = player_info[opp]["bet"]
+
+                # 計算讓桿差與讓桿洞
+                h_diff = opp_handicap - main_handicap
+                if h_diff > 0:
+                    hcp_df = pd.DataFrame({"idx": range(18), "hcp": full_hcp})
+                    give_holes = hcp_df.sort_values("hcp").head(h_diff)["idx"].tolist()
+                else:
+                    give_holes = []
+
+                # 調整對手分數
+                adjusted_opp = opp_score.copy()
+                for i in give_holes:
+                    adjusted_opp[i] -= 1
+
+                # 勝負計算
+                win, lose, tie = 0, 0, 0
+                for m, o in zip(main_score, adjusted_opp):
+                    if m < o:
+                        win += 1
+                    elif m > o:
+                        lose += 1
+                    else:
+                        tie += 1
+
+                net = win - lose
+                bet_result = net * opp_bet
+
+                results.append({
+                    "對手": opp,
+                    "勝": win,
+                    "負": lose,
+                    "平": tie,
+                    "賭金結果": bet_result
+                })
+
+            df_result = pd.DataFrame(results)
+            st.dataframe(df_result, use_container_width=True)
         else:
             st.error("請確認每位球員皆已正確輸入 18 碼桿數")
