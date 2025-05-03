@@ -36,4 +36,36 @@ else:
 
 # ========== 4. 快速輸入 18 洞桿數 ==========
 if len(selected_players) >= 2:
-    s
+    st.header("3️⃣ 快速輸入 18 洞桿數")
+    scores = {}
+    for p in selected_players:
+        raw_input = st.text_input(f"{p} 的18洞桿數（請輸入18個數字，例如 455344...）", max_chars=18, key=f"{p}_score")
+        if len(raw_input) == 18 and raw_input.isdigit():
+            scores[p] = [int(c) for c in raw_input]
+        else:
+            scores[p] = []
+
+# ========== 5. 選擇主要選手 ==========
+    st.header("4️⃣ 選擇主要選手")
+    main_player = st.selectbox("指定主要選手", selected_players)
+
+    if st.button("✅ 產生比分結果"):
+        if all(len(s) == 18 for s in scores.values()):
+            st.success("比賽結果如下：")
+            for opponent in selected_players:
+                if opponent == main_player:
+                    continue
+                main_score = scores[main_player]
+                opp_score = scores[opponent]
+                main_wins = sum([1 for m, o in zip(main_score, opp_score) if m < o])
+                opp_wins = sum([1 for m, o in zip(main_score, opp_score) if m > o])
+                ties = 18 - main_wins - opp_wins
+
+                st.markdown(f"""
+                ### 📊 {main_player} vs {opponent}
+                - 🏆 {main_player} 勝洞數: {main_wins}
+                - 🏆 {opponent} 勝洞數: {opp_wins}
+                - ⚖️ 平手洞數: {ties}
+                """)
+        else:
+            st.error("請確認每位球員皆輸入完整 18 洞桿數")
