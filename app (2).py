@@ -88,26 +88,20 @@ if len(selected_players) >= 2:
                 opp_score = scores[opp]
                 opp_bet = player_info[opp]["bet"]
 
-                                # 計算讓桿差與讓桿洞
-                h_diff = main_handicap - opp_handicap
+                # 差點差值：若主要差點低 → 主要需讓桿
+                h_diff = opp_handicap - main_handicap
                 if h_diff > 0:
                     hcp_df = pd.DataFrame({"idx": range(18), "hcp": full_hcp})
                     give_holes = hcp_df.sort_values("hcp").head(h_diff)["idx"].tolist()
                 else:
                     give_holes = []
 
-                # 調整對手分數
+                # 對手在被讓桿的洞獲得 -1 調整
                 adjusted_opp = opp_score.copy()
                 for i in give_holes:
                     adjusted_opp[i] -= 1
 
-
-                # 調整對手分數
-                adjusted_opp = opp_score.copy()
-                for i in give_holes:
-                    adjusted_opp[i] -= 1
-
-                # 勝負計算
+                # 比較勝負
                 win, lose, tie = 0, 0, 0
                 for m, o in zip(main_score, adjusted_opp):
                     if m < o:
