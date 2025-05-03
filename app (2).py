@@ -55,14 +55,16 @@ if len(selected_players) >= 2:
     full_par = front_par + back_par
     full_hcp = front_hcp + back_hcp
 
-    # ========== 快速輸入桿數 ==========
-    st.header("3️⃣ 快速輸入每位球員的桿數（前9+後9）")
+    # ========== 快速輸入18洞桿數 ==========
+    st.header("3️⃣ 快速輸入每位球員的18洞桿數（最多18碼）")
     scores = {}
+
     for p in selected_players:
-        f9 = st.text_input(f"{p} 的前9洞桿數（9碼）", max_chars=9, key=f"{p}_f9")
-        b9 = st.text_input(f"{p} 的後9洞桿數（9碼）", max_chars=9, key=f"{p}_b9")
-        if len(f9) == 9 and f9.isdigit() and len(b9) == 9 and b9.isdigit():
-            scores[p] = [int(x) for x in f9 + b9]
+        raw = st.text_input(f"{p} 的18洞桿數（請輸入 18 個數字）", max_chars=18, key=f"{p}_input")
+        current_len = len(raw)
+        st.caption(f"⛳ {p} 已輸入：{current_len} / 18 碼")
+        if current_len > 0 and raw.isdigit():
+            scores[p] = [int(x) for x in raw]
         else:
             scores[p] = []
 
@@ -70,7 +72,7 @@ if len(selected_players) >= 2:
     st.header("4️⃣ 選擇主要選手並計算比分")
     main_player = st.selectbox("指定主要選手", selected_players)
 
-    # ========== 計算勝負 ==========
+    # ========== 比分結果顯示 ==========
     if st.button("✅ 產生比分結果"):
         if all(len(s) == 18 for s in scores.values()):
             st.success("比賽結果如下：")
@@ -90,4 +92,4 @@ if len(selected_players) >= 2:
                 - ⚖️ 平手洞數：{ties}
                 """)
         else:
-            st.error("請確認每位球員皆已正確輸入前後9洞共18碼桿數")
+            st.error("請確認每位球員皆已正確輸入 18 碼桿數")
