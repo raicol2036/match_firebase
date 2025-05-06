@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="高爾夫Match play - 1 vs N", layout="wide")
 import pandas as pd
 from streamlit.components.v1 import html
 from datetime import datetime
