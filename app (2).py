@@ -1,14 +1,14 @@
 import streamlit as st
 st.set_page_config(page_title="高爾夫Match play - 1 vs N", layout="wide")
+
+# 其餘 import 放這裡
 import pandas as pd
 from streamlit.components.v1 import html
 from datetime import datetime
-
-# Firebase
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# 初始化 Firebase（只做一次）
+# Firebase 初始化前，不能有其他 st.xxx
 if "firebase_initialized" not in st.session_state:
     if not firebase_admin._apps:
         cred = credentials.Certificate({
@@ -25,26 +25,6 @@ if "firebase_initialized" not in st.session_state:
         })
         firebase_admin.initialize_app(cred)
     st.session_state.firebase_initialized = True
-
-db = firestore.client()
-
-st.set_page_config(page_title="高爾夫Match play-1 vs N", layout="wide")
-st.title("\u26f3\ufe0f \u9ad8\u723e\u592bMatch play - 1 vs N")
-
-# ========== 新增：從 Firebase 讀取今日成績 ==========
-if st.button("從 Firebase 讀取今日球員成績"):
-    today_str = datetime.today().strftime("%Y-%m-%d")
-    doc_ref = db.collection("golf_games").document(today_str)
-    doc = doc_ref.get()
-    if doc.exists:
-        game_data = doc.to_dict()
-        st.success(f"已讀取 {today_str} 的比賽資料")
-        st.json(game_data)
-    else:
-        st.error(f"查無 {today_str} 的比賽資料")
-
-# ...這裡是原本的主程式碼，照舊保留，從 st.set_page_config() 之後繼續寫...
-st.set_page_config(page_title="高爾夫Match play-1 vs N", layout="wide")
 st.title("⛳ 高爾夫Match play - 1 vs N")
 
 # 自定義數字輸入欄位，強制 inputmode = numeric
