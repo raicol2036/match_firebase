@@ -31,7 +31,7 @@ def adjust_scores(main, opp, hcp_value, hcp_main, hcp_opp):
 
 # 載入資料
 course_df = pd.read_csv("course_db.csv")
-players_df = pd.read_csv("players_db.csv")
+players_df = pd.read_csv("players.csv")
 
 course_name = st.selectbox("選擇球場", course_df["course_name"].unique())
 zones = course_df[course_df["course_name"] == course_name]["area"].unique()
