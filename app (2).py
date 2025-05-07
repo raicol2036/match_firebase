@@ -50,13 +50,6 @@ st.markdown("### 參賽球員設定")
 player_list = players_df["name"].tolist()
 selected_players = st.multiselect("選擇參賽球員（至少兩位）", player_list)
 
-if st.button("生成快速輸入與差點設定"):
-    if len(selected_players) < 2:
-        st.warning("⚠️ 至少需要兩位球員才能進行比賽。")
-    else:
-        st.session_state['players'] = selected_players
-        st.experimental_rerun()
-
 if 'players' in st.session_state:
     st.markdown("### 快速輸入與差點設定")
     for player in st.session_state['players']:
@@ -67,6 +60,20 @@ if 'players' in st.session_state:
         numeric_input_html(f"{player} 後9洞成績輸入（9位數）", key=f"quick_back_{player}")
         st.number_input(f"{player} 差點", 0, 54, 0, key=f"hcp_{player}")
         st.number_input(f"{player} 每洞賭金", 10, 1000, 100, key=f"bet_{player}")
+
+        if st.button("生成快速輸入與差點設定"):
+    if len(selected_players) < 2:
+        st.warning("⚠️ 至少需要兩位球員才能進行比賽。")
+    else:
+        # ✅ 儲存到 session_state 並加上確認 flag
+        if 'players' not in st.session_state:
+            st.session_state['players'] = selected_players
+            st.session_state['init_done'] = True
+        # ✅ 避免重複刷新
+        if st.session_state.get('init_done', False):
+            st.session_state['init_done'] = False
+            st.experimental_rerun()
+
 
 if st.button("生成對戰比分表"):
     if 'players' not in st.session_state:
