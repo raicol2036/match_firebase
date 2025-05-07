@@ -83,11 +83,8 @@ for i in range(1, 5):
 if st.button("📥 載入快速成績"):
     st.experimental_rerun()
 
+# 處理快速輸入欄位
 all_players = [player_a] + opponents
-score_data = {p: [] for p in all_players}
-total_earnings = {p: 0 for p in all_players}
-result_tracker = {p: {"win": 0, "lose": 0, "tie": 0} for p in all_players}
-
 quick_scores = {}
 for p in all_players:
     front = st.session_state.get(f"quick_front_{p}", "")
@@ -101,58 +98,66 @@ for p in all_players:
     elif front or back:
         st.error(f"⚠️ {p} 快速成績輸入需為 9+9 共18位數字串。")
 
-st.markdown("### 📝 輸入每洞成績與賭金")
-for i in range(18):
-    st.markdown(f"#### 第{i+1}洞 (Par {par[i]}, HCP {hcp[i]})")
-    cols = st.columns(1 + len(opponents))
+# 👉 按鈕控制開始成績輸入
+if st.button("✅ 確認設定並開始輸入每洞成績"):
 
-    default_score = quick_scores[player_a][i] if player_a in quick_scores else par[i]
-    score_main = cols[0].number_input("", 1, 15, default_score, key=f"{player_a}_score_{i}", label_visibility="collapsed")
-    score_data[player_a].append(score_main)
-    birdie_main = " 🐦" if score_main < par[i] else ""
-    with cols[0]:
-        st.markdown(f"<div style='text-align:center; margin-bottom:-10px'><strong>{player_a} 桿數{birdie_main}</strong></div>", unsafe_allow_html=True)
+    score_data = {p: [] for p in all_players}
+    total_earnings = {p: 0 for p in all_players}
+    result_tracker = {p: {"win": 0, "lose": 0, "tie": 0} for p in all_players}
 
-    for idx, op in enumerate(opponents):
-        default_score = quick_scores[op][i] if op in quick_scores else par[i]
-        score_op = cols[idx + 1].number_input("", 1, 15, default_score, key=f"{op}_score_{i}", label_visibility="collapsed")
-        score_data[op].append(score_op)
+    st.markdown("### 📝 輸入每洞成績與賭金")
 
-        adj_main, adj_op = adjust_scores(score_main, score_op, hcp[i], handicaps[player_a], handicaps[op])
+    for i in range(18):
+        st.markdown(f"#### 第{i+1}洞 (Par {par[i]}, HCP {hcp[i]})")
+        cols = st.columns(1 + len(opponents))
 
-        if adj_op < adj_main:
-            emoji = "👑"
-            bonus = 2 if score_op < par[i] else 1
-            total_earnings[op] += bets[op] * bonus
-            total_earnings[player_a] -= bets[op] * bonus
-            result_tracker[op]["win"] += 1
-            result_tracker[player_a]["lose"] += 1
-        elif adj_op > adj_main:
-            emoji = "👽"
-            bonus = 2 if score_main < par[i] else 1
-            total_earnings[op] -= bets[op] * bonus
-            total_earnings[player_a] += bets[op] * bonus
-            result_tracker[player_a]["win"] += 1
-            result_tracker[op]["lose"] += 1
-        else:
-            emoji = "⚖️"
-            result_tracker[player_a]["tie"] += 1
-            result_tracker[op]["tie"] += 1
+        default_score = quick_scores[player_a][i] if player_a in quick_scores else par[i]
+        score_main = cols[0].number_input("", 1, 15, default_score, key=f"{player_a}_score_{i}", label_visibility="collapsed")
+        score_data[player_a].append(score_main)
+        birdie_main = " 🐦" if score_main < par[i] else ""
+        with cols[0]:
+            st.markdown(f"<div style='text-align:center; margin-bottom:-10px'><strong>{player_a} 桿數{birdie_main}</strong></div>", unsafe_allow_html=True)
 
-        birdie_icon = " 🐦" if score_op < par[i] else ""
-        with cols[idx + 1]:
-            st.markdown(f"<div style='text-align:center; margin-bottom:-10px'><strong>{op} 桿數 {emoji}{birdie_icon}</strong></div>", unsafe_allow_html=True)
+        for idx, op in enumerate(opponents):
+            default_score = quick_scores[op][i] if op in quick_scores else par[i]
+            score_op = cols[idx + 1].number_input("", 1, 15, default_score, key=f"{op}_score_{i}", label_visibility="collapsed")
+            score_data[op].append(score_op)
 
-st.markdown("### 📊 總結結果（含勝負平統計）")
-summary_data = []
-for p in all_players:
-    summary_data.append({
-        "球員": p,
-        "總賭金結算": total_earnings[p],
-        "勝": result_tracker[p]["win"],
-        "負": result_tracker[p]["lose"],
-        "平": result_tracker[p]["tie"]
-    })
+            adj_main, adj_op = adjust_scores(score_main, score_op, hcp[i], handicaps[player_a], handicaps[op])
 
-summary_df = pd.DataFrame(summary_data)
-st.dataframe(summary_df.set_index("球員").sort_values("總賭金結算", ascending=False))
+            if adj_op < adj_main:
+                emoji = "👑"
+                bonus = 2 if score_op < par[i] else 1
+                total_earnings[op] += bets[op] * bonus
+                total_earnings[player_a] -= bets[op] * bonus
+                result_tracker[op]["win"] += 1
+                result_tracker[player_a]["lose"] += 1
+            elif adj_op > adj_main:
+                emoji = "👽"
+                bonus = 2 if score_main < par[i] else 1
+                total_earnings[op] -= bets[op] * bonus
+                total_earnings[player_a] += bets[op] * bonus
+                result_tracker[player_a]["win"] += 1
+                result_tracker[op]["lose"] += 1
+            else:
+                emoji = "⚖️"
+                result_tracker[player_a]["tie"] += 1
+                result_tracker[op]["tie"] += 1
+
+            birdie_icon = " 🐦" if score_op < par[i] else ""
+            with cols[idx + 1]:
+                st.markdown(f"<div style='text-align:center; margin-bottom:-10px'><strong>{op} 桿數 {emoji}{birdie_icon}</strong></div>", unsafe_allow_html=True)
+
+    st.markdown("### 📊 總結結果（含勝負平統計）")
+    summary_data = []
+    for p in all_players:
+        summary_data.append({
+            "球員": p,
+            "總賭金結算": total_earnings[p],
+            "勝": result_tracker[p]["win"],
+            "負": result_tracker[p]["lose"],
+            "平": result_tracker[p]["tie"]
+        })
+
+    summary_df = pd.DataFrame(summary_data)
+    st.dataframe(summary_df.set_index("球員").sort_values("總賭金結算", ascending=False))
