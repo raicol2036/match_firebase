@@ -46,53 +46,45 @@ holes = pd.concat([holes_front, holes_back]).reset_index(drop=True)
 par = holes["par"].tolist()
 hcp = holes["hcp"].tolist()
 
-st.markdown("### 球員設定")
-player_list = ["請選擇球員"] + players_df["name"].tolist()
-player_list_with_done = player_list + ["✅ Done"]
+st.markdown("### 參賽球員設定")
+player_list = players_df["name"].tolist()
+selected_players = st.multiselect("選擇參賽球員（至少兩位）", player_list)
 
-player_a = st.selectbox("選擇主球員 A", player_list)
-if player_a == "請選擇球員":
-    st.warning("⚠️ 請選擇主球員 A 才能繼續操作。")
-    st.stop()
+if st.button("生成快速輸入與差點設定"):
+    if len(selected_players) < 2:
+        st.warning("⚠️ 至少需要兩位球員才能進行比賽。")
+    else:
+        st.session_state['players'] = selected_players
+        st.experimental_rerun()
 
-st.subheader("主球員快速成績輸入")
+if 'players' in st.session_state:
+    st.markdown("### 快速輸入與差點設定")
+    for player in st.session_state['players']:
+        st.subheader(f"{player}")
+        st.markdown("**前九洞成績**")
+        numeric_input_html(f"{player} 前9洞成績輸入（9位數）", key=f"quick_front_{player}")
+        st.markdown("**後九洞成績**")
+        numeric_input_html(f"{player} 後9洞成績輸入（9位數）", key=f"quick_back_{player}")
+        st.number_input(f"{player} 差點", 0, 54, 0, key=f"hcp_{player}")
+        st.number_input(f"{player} 每洞賭金", 10, 1000, 100, key=f"bet_{player}")
 
-st.markdown("**前九洞成績**")
-numeric_input_html("主球員前9洞成績輸入（9位數）", key=f"quick_front_{player_a}")
+if st.button("生成對戰比分表"):
+    if 'players' not in st.session_state:
+        st.warning("⚠️ 尚未完成選手設定。")
+    else:
+        # 讀取快速成績
+        quick_scores = {}
+        for p in st.session_state['players']:
+            front = st.session_state.get(f"quick_front_{p}", "")
+            back = st.session_state.get(f"quick_back_{p}", "")
+            full = front + back
+            if full and len(full) == 18 and full.isdigit():
+                quick_scores[p] = [int(c) for c in full]
 
-st.markdown("**後九洞成績**")
-numeric_input_html("主球員後9洞成績輸入（9位數）", key=f"quick_back_{player_a}")
-
-handicaps = {player_a: st.number_input(f"{player_a} 差點", 0, 54, 0, key="hcp_main")}
-
-opponents = []
-bets = {}
-for i in range(1, 5):
-    st.markdown(f"#### 對手球員 B{i}")
-    cols = st.columns([2, 1, 1])
-    with cols[0]:
-        name = st.selectbox(f"球員 B{i} 名稱", player_list_with_done, key=f"b{i}_name")
-    if name == "請選擇球員":
-        st.warning(f"⚠️ 請選擇對手球員 B{i}。")
-        st.stop()
-    if name == "✅ Done":
-        break
-    if name in [player_a] + opponents:
-        st.warning(f"⚠️ {name} 已被選擇，請勿重複。")
-        st.stop()
-    opponents.append(name)
-
-    st.subheader(f"{name} 快速成績輸入")
-    st.markdown("**前九洞成績**")
-    numeric_input_html(f"{name} 前9洞成績輸入（9位數）", key=f"quick_front_{name}")
-    st.markdown("**後九洞成績**")
-    numeric_input_html(f"{name} 後9洞成績輸入（9位數）", key=f"quick_back_{name}")
-
-    with cols[1]:
-        handicaps[name] = st.number_input("差點：", 0, 54, 0, key=f"hcp_b{i}")
-    with cols[2]:
-        bets[name] = st.number_input("每洞賭金", 10, 1000, 100, key=f"bet_b{i}")
-
-if st.button("載入快速成績"):
-    st.experimental_rerun()
-
+        st.markdown("### 對戰比分表")
+        for i in range(18):
+            st.markdown(f"#### 第{i+1}洞 (Par {par[i]}, HCP {hcp[i]})")
+            cols = st.columns(len(st.session_state['players']))
+            for idx, player in enumerate(st.session_state['players']):
+                default_score = quick_scores[player][i] if player in quick_scores and len(quick_scores[player]) == 18 else par[i]
+                cols[idx].number_input(f"{player} 成績", 1, 15, default_score, key=f"score_{player}_{i}", label_visibility="collapsed")
