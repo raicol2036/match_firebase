@@ -86,12 +86,24 @@ if st.button("生成對戰比分表"):
                 quick_scores[p] = [int(c) for c in full]
 
         st.markdown("### 對戰比分表")
+        
+        # 暫存分數資料
+        score_tracker = {}
+
         for i in range(18):
             st.markdown(f"#### 第{i+1}洞 (Par {par[i]}, HCP {hcp[i]})")
             cols = st.columns(len(st.session_state['players']))
+
             for idx, player in enumerate(st.session_state['players']):
                 default_score = quick_scores[player][i] if player in quick_scores and len(quick_scores[player]) == 18 else par[i]
-                score_input = cols[idx].number_input(f"{player} 成績", 1, 15, default_score, key=f"score_{player}_{i}", label_visibility="collapsed")
+                score_input = cols[idx].number_input(
+                    f"{player} 成績", 1, 15, default_score, key=f"score_{player}_{i}", label_visibility="collapsed"
+                )
+                # 暫存分數
+                score_tracker[f"score_{player}_{i}"] = score_input
 
-                # ✅ 更新至 session_state 方便後續計算
-                st.session_state[f"score_{player}_{i}"] = score_input
+        # 使用按鈕來同步更新，避免即時更新導致 Streamlit 的同步問題
+        if st.button("同步更新所有比分"):
+            for key, value in score_tracker.items():
+                st.session_state[key] = value
+            st.success("所有比分已同步更新至 session_state")
