@@ -54,16 +54,13 @@ if st.button("生成快速輸入與差點設定"):
     if len(selected_players) < 2:
         st.warning("⚠️ 至少需要兩位球員才能進行比賽。")
     else:
-        # ✅ 如果未初始化過，進行初始化
         if 'players' not in st.session_state:
             st.session_state['players'] = selected_players
             st.session_state['init_done'] = True
-
-        # ✅ 避免重複刷新：使用 session_state 判斷
         if st.session_state.get('init_done', False):
             st.session_state['init_done'] = False
-            st.write("設定完成，請繼續下方設定。")
-            
+            st.experimental_rerun()
+
 if 'players' in st.session_state:
     st.markdown("### 快速輸入與差點設定")
     for player in st.session_state['players']:
@@ -94,4 +91,7 @@ if st.button("生成對戰比分表"):
             cols = st.columns(len(st.session_state['players']))
             for idx, player in enumerate(st.session_state['players']):
                 default_score = quick_scores[player][i] if player in quick_scores and len(quick_scores[player]) == 18 else par[i]
-                cols[idx].number_input(f"{player} 成績", 1, 15, default_score, key=f"score_{player}_{i}", label_visibility="collapsed")
+                score_input = cols[idx].number_input(f"{player} 成績", 1, 15, default_score, key=f"score_{player}_{i}", label_visibility="collapsed")
+
+                # ✅ 更新至 session_state 方便後續計算
+                st.session_state[f"score_{player}_{i}"] = score_input
