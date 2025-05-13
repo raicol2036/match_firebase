@@ -93,11 +93,6 @@ if scores_data:
     else:
         st.error('⚠️ 成績表生成失敗，請確認快速輸入是否正確填滿 18 碼。')
 
-if st.button('計算賭金結果'):
-    st.subheader("6. 比賽結果（含賭金結算）")
-match_summary_df = pd.DataFrame('', index=selected_players, columns=selected_players)
-match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in selected_players} for p in selected_players}
-
 for hole in holes:
     for p1 in selected_players:
         for p2 in selected_players:
@@ -106,7 +101,7 @@ for hole in holes:
                     score1 = st.session_state.scores_df.loc[str(hole), p1]
                     score2 = st.session_state.scores_df.loc[str(hole), p2]
 
-# 修正 Series 問題，確保取得的是單一數值
+                    # 修正 Series 問題，確保取得的是單一數值
                     try:
                         score1 = float(score1) if isinstance(score1, (int, float)) else float(score1.iloc[0])
                         score2 = float(score2) if isinstance(score2, (int, float)) else float(score2.iloc[0])
@@ -116,14 +111,14 @@ for hole in holes:
                 except KeyError:
                     continue
                 score1_adj = score1 - handicaps[p1]
-                    score2_adj = score2 - handicaps[p2]
+                score2_adj = score2 - handicaps[p2]
 
                         if score1_adj < score2_adj:
-                        match_result_counts[p1][p2]['win'] += 1
-                    elif score1_adj > score2_adj:
-                        match_result_counts[p1][p2]['lose'] += 1
-                    else:
-                        match_result_counts[p1][p2]['draw'] += 1
+                    match_result_counts[p1][p2]['win'] += 1
+                elif score1_adj > score2_adj:
+                    match_result_counts[p1][p2]['lose'] += 1
+                else:
+                    match_result_counts[p1][p2]['draw'] += 1
 
 for p1 in selected_players:
     for p2 in selected_players:
