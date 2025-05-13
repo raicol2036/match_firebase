@@ -116,14 +116,14 @@ for hole in holes:
                 except KeyError:
                     continue
                 score1_adj = score1 - handicaps[p1]
-                        score2_adj = score2 - handicaps[p2]
+                    score2_adj = score2 - handicaps[p2]
 
                         if score1_adj < score2_adj:
-                    match_result_counts[p1][p2]['win'] += 1
-                elif score1_adj > score2_adj:
-                    match_result_counts[p1][p2]['lose'] += 1
-                
-                    match_result_counts[p1][p2]['draw'] += 1
+                        match_result_counts[p1][p2]['win'] += 1
+                    elif score1_adj > score2_adj:
+                        match_result_counts[p1][p2]['lose'] += 1
+                    else:
+                        match_result_counts[p1][p2]['draw'] += 1
 
 for p1 in selected_players:
     for p2 in selected_players:
