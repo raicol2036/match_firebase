@@ -31,7 +31,6 @@ hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
 
 # 上傳並選擇球員
 st.subheader('2. 輸入參賽球員')
-st.subheader('2. 輸入參賽球員')
 players_df = pd.read_csv('players.csv')
 player_names = players_df['name'].tolist()
 selected_players = st.multiselect('選擇參賽球員（至少2人）', player_names)
@@ -90,7 +89,7 @@ for player in selected_players:
     
         
 
-# 更新到 DataFrame
+ 更新到 DataFrame
 if scores_data:
     st.session_state.scores_df = pd.DataFrame(scores_data, index=[str(h) for h in holes])
     if not st.session_state.scores_df.empty:
@@ -98,7 +97,7 @@ if scores_data:
         st.dataframe(st.session_state.scores_df)
     else:
         st.error('⚠️ 成績表生成失敗，請確認快速輸入是否正確填滿 18 碼。')
-
+else:
     st.warning('⚠️ 尚未完成所有球員的成績輸入')
 
 # 差點讓桿
@@ -138,14 +137,16 @@ if scores_data:
 
 # 📊 總結
 st.markdown("### 📊 總結結果（含勝負平統計）")
+# 更新計算部分
 summary_data = []
-for p in all_players:
+for p in selected_players:
     summary_data.append({
         "球員": p,
-        "總賭金結算": total_earnings[p],
+        "總賭金結算": total_earnings.get(p, 0),
         "勝": result_tracker[p]["win"],
         "負": result_tracker[p]["lose"],
         "平": result_tracker[p]["tie"]
     })
 summary_df = pd.DataFrame(summary_data)
 st.dataframe(summary_df.set_index("球員"))
+
