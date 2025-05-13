@@ -82,10 +82,7 @@ for player in selected_players:
     else:
         st.warning(f'{player} 的快速成績尚未完成輸入')
 
-# 檢查是否有缺失的洞編號
-    missing_holes = [str(h) for h in holes if str(h) not in st.session_state.scores_df.index]
-    if missing_holes:
-        st.error(f'成績資料缺少以下洞：{", ".join(missing_holes)}')
+
     else:
         st.warning(f'{player} 的快速成績尚未完成輸入')
 
@@ -108,9 +105,7 @@ for hole in holes:
                 try:
                     score1 = st.session_state.scores_df.loc[str(hole), p1] - handicaps[p1]
                     score2 = st.session_state.scores_df.loc[str(hole), p2] - handicaps[p2]
-                except KeyError:
-                    st.error(f'找不到資料：Hole {hole}, {p1} 或 {p2}')
-                    continue
+                except KeyError:\n                    continue
                 if score1 < score2:
                     match_result_counts[p1][p2]['win'] += 1
                 elif score1 > score2:
