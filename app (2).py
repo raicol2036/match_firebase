@@ -6,34 +6,25 @@ import numpy as np
 st.set_page_config(page_title='⛳ 高爾夫比洞賽模擬器', layout='wide')
 st.title('⛳ 高爾夫比洞賽模擬器')
 
-# 上傳並選擇球場
-st.subheader('1. 選擇球場')
-course_file = st.file_uploader("上傳球場資料 (course_db.csv)", type="csv")
-if course_file is not None:
-    course_df = pd.read_csv(course_file)
-    course_names = course_df['course_name'].unique()
-    selected_course = st.selectbox("選擇球場", course_names)
-    course_info = course_df[course_df['course_name'] == selected_course]
-    holes = course_info['hole'].tolist()
-    pars = course_info['par'].tolist()
-    hcp = course_info['hcp'].tolist()
-else:
-    st.warning("請上傳包含欄位 'course_name', 'area', 'hole', 'hcp', 'par' 的 course_db.csv 檔案。")
-    st.stop()
+# 載入資料
+course_df = pd.read_csv("course_db.csv")
+players_df = pd.read_csv("players_db.csv")
 
-# 上傳並選擇球員
-st.subheader('2. 輸入參賽球員')
-players_file = st.file_uploader("上傳球員資料 (players.csv)", type="csv")
-if players_file is not None:
-    players_df = pd.read_csv(players_file)
-    player_names = players_df['name'].tolist()
-    selected_players = st.multiselect("選擇參賽球員（至少2人）", player_names)
-    if len(selected_players) < 2:
-        st.warning("請選擇至少兩位球員參賽。")
-        st.stop()
-else:
-    st.warning("請上傳包含欄位 'name' 的 players.csv 檔案。")
-    st.stop()
+# 球場與區域
+course_name = st.selectbox("選擇球場", course_df["course_name"].unique())
+zones = course_df[course_df["course_name"] == course_name]["area"].unique()
+zone_front = st.selectbox("前九洞區域", zones)
+zone_back = st.selectbox("後九洞區域", zones)
+
+holes_front = course_df[(course_df["course_name"] == course_name) & (course_df["area"] == zone_front)].sort_values("hole")
+holes_back = course_df[(course_df["course_name"] == course_name) & (course_df["area"] == zone_back)].sort_values("hole")
+holes = pd.concat([holes_front, holes_back]).reset_index(drop=True)
+par = holes["par"].tolist()
+hcp = holes["hcp"].tolist()
+
+st.markdown("### 🎯 球員設定")
+player_list = ["請選擇球員"] + players_df["name"].tolist()
+player_list_with_done = player_list + ["✅ Done"]
 
 # 輸入個人差點
 st.subheader('3. 輸入個人差點')
