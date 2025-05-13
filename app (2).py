@@ -31,6 +31,7 @@ hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
 
 # 上傳並選擇球員
 st.subheader('2. 輸入參賽球員')
+st.subheader('2. 輸入參賽球員')
 players_df = pd.read_csv('players.csv')
 player_names = players_df['name'].tolist()
 selected_players = st.multiselect('選擇參賽球員（至少2人）', player_names)
@@ -71,7 +72,7 @@ if 'scores_df' not in st.session_state:
     st.session_state.scores_df.index = st.session_state.scores_df.index.map(str)
 
 if st.button('生成逐洞成績'):
-st.subheader('5. 逐洞成績 (自動填入)')
+    st.subheader('5. 逐洞成績 (自動填入)')
 
 # 根據快速輸入的值填入成績表
 scores_data = {}
@@ -96,7 +97,7 @@ else:
     st.warning('⚠️ 尚未完成所有球員的成績輸入')
 
 if st.button('計算賭金結果'):
-st.subheader("6. 比賽結果（含賭金結算）")
+    st.subheader("6. 比賽結果（含賭金結算）")
 match_summary_df = pd.DataFrame('', index=selected_players, columns=selected_players)
 match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in selected_players} for p in selected_players}
 
