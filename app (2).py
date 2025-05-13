@@ -82,6 +82,13 @@ for player in selected_players:
     else:
         st.warning(f'{player} 的快速成績尚未完成輸入')
 
+# 檢查是否有缺失的洞編號
+    missing_holes = [str(h) for h in holes if str(h) not in st.session_state.scores_df.index]
+    if missing_holes:
+        st.error(f'成績資料缺少以下洞：{", ".join(missing_holes)}')
+    else:
+        st.warning(f'{player} 的快速成績尚未完成輸入')
+
 # 更新到 DataFrame
 if scores_data:
     st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
