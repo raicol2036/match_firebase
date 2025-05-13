@@ -83,6 +83,14 @@ for player in selected_players:
         except ValueError:
             st.error(f'{player} 的快速成績包含非數字的字符')
         scores_data[player] = [int(x) for x in quick_scores[player]]
+    
+        if len(quick_scores[player]) < 18:
+    st.warning(f'{player} 的快速成績尚未完成輸入')
+
+
+    
+        if len(quick_scores[player]) < 18:
+    st.warning(f'{player} 的快速成績尚未完成輸入')
 
 # 更新到 DataFrame
 if scores_data:
@@ -92,6 +100,13 @@ if scores_data:
         st.dataframe(st.session_state.scores_df)
     else:
         st.error('⚠️ 成績表生成失敗，請確認快速輸入是否正確填滿 18 碼。')
+
+    st.warning('⚠️ 尚未完成所有球員的成績輸入')
+
+if st.button('計算賭金結果'):
+    st.subheader("6. 比賽結果（含賭金結算）")
+match_summary_df = pd.DataFrame('', index=selected_players, columns=selected_players)
+match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in selected_players} for p in selected_players}
 
 for hole in holes:
     for p1 in selected_players:
@@ -114,12 +129,11 @@ for hole in holes:
                 score2_adj = score2 - handicaps[p2]
 
                         if score1_adj < score2_adj:
-                            match_result_counts[p1][p2]['win'] += 1
-                        elif score1_adj > score2_adj:
-                            match_result_counts[p1][p2]['lose'] += 1
-                        else:
-                            match_result_counts[p1][p2]['draw'] += 1
-
+        match_result_counts[p1][p2]['win'] += 1
+    elif score1_adj > score2_adj:
+        match_result_counts[p1][p2]['lose'] += 1
+    else:
+        match_result_counts[p1][p2]['draw'] += 1
 
 for p1 in selected_players:
     for p2 in selected_players:
