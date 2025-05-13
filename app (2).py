@@ -55,8 +55,7 @@ for player in selected_players:
     current_length = len(quick_scores[player])
     if current_length > 18:
         st.error(f'⚠️ 輸入過長，目前長度為 {current_length}/18')
-    elif current_length < 18:
-        st.warning(f'⚠️ 尚未完成輸入，目前長度：{current_length}/18')
+    
     else:
         st.success('✅ 完成 18 碼輸入')
 
