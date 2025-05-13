@@ -6,23 +6,43 @@ import numpy as np
 st.set_page_config(page_title='⛳ 高爾夫比洞賽模擬器', layout='wide')
 st.title('⛳ 高爾夫比洞賽模擬器')
 
+# 初始化資料
+CSV_PATH = "players.csv"
+
+# 初始化 Session State
+if 'players' not in st.session_state:
+    try:
+        players_df = pd.read_csv(CSV_PATH)
+        st.session_state.players = players_df['name'].tolist()
+    except FileNotFoundError:
+        st.session_state.players = []
+
 # --- 球場選擇 ---
-course_options = course_df["course_name"].unique().tolist()
-selected_course = st.selectbox("選擇球場", course_options)
+course_file = st.file_uploader("上傳球場資料 (course_db.csv)", type="csv")
+if course_file is not None:
+    course_df = pd.read_csv(course_file)
+    course_options = course_df["course_name"].unique().tolist()
+    selected_course = st.selectbox("選擇球場", course_options)
 
-filtered_area = course_df[course_df["course_name"] == selected_course]["area"].unique().tolist()
-front_area = st.selectbox("前九洞區域", filtered_area, key="front_area")
-back_area = st.selectbox("後九洞區域", filtered_area, key="back_area")
+    filtered_area = course_df[course_df["course_name"] == selected_course]["area"].unique().tolist()
+    front_area = st.selectbox("前九洞區域", filtered_area, key="front_area")
+    back_area = st.selectbox("後九洞區域", filtered_area, key="back_area")
 
-def get_course_info(cname, area):
-    temp = course_df[(course_df["course_name"] == cname) & (course_df["area"] == area)]
-    temp = temp.sort_values("hole")
-    return temp["par"].tolist(), temp["hcp"].tolist()
+    def get_course_info(cname, area):
+        temp = course_df[(course_df["course_name"] == cname) & (course_df["area"] == area)]
+        temp = temp.sort_values("hole")
+        return temp["par"].tolist(), temp["hcp"].tolist(), temp["hole"].tolist()
 
-front_par, front_hcp = get_course_info(selected_course, front_area)
-back_par, back_hcp = get_course_info(selected_course, back_area)
-par = front_par + back_par
-hcp = front_hcp + back_hcp
+    front_par, front_hcp, front_holes = get_course_info(selected_course, front_area)
+    back_par, back_hcp, back_holes = get_course_info(selected_course, back_area)
+    
+    par = front_par + back_par
+    hcp = front_hcp + back_hcp
+    holes = front_holes + back_holes
+
+else:
+    st.warning("⚠️ 請上傳包含 'course_name', 'area', 'hole', 'hcp', 'par' 的 course_db.csv 檔案")
+    st.stop()
 
 # --- 球員設定 ---
 players = st.multiselect("選擇參賽球員（最多4位）", st.session_state.players, max_selections=4)
@@ -46,7 +66,7 @@ bet_per_person = st.number_input("單局賭金（每人）", 10, 1000, 100)
 # 初始化成績資料
 if 'scores_df' not in st.session_state:
     np.random.seed(42)
-    scores_data = {player: np.random.randint(3, 6, size=len(holes)) for player in selected_players}
+    scores_data = {player: np.random.randint(3, 6, size=len(holes)) for player in players}
     st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
 
 # 顯示可編輯的成績表格
@@ -61,12 +81,12 @@ st.session_state.scores_df = edited_scores
 
 # 計算比賽結果（含賭金結算）
 st.subheader("6. 比賽結果（含賭金結算）")
-match_summary_df = pd.DataFrame('', index=selected_players, columns=selected_players)
-match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in selected_players} for p in selected_players}
+match_summary_df = pd.DataFrame('', index=players, columns=players)
+match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in players} for p in players}
 
 for hole in holes:
-    for p1 in selected_players:
-        for p2 in selected_players:
+    for p1 in players:
+        for p2 in players:
             if p1 != p2:
                 score1 = st.session_state.scores_df.loc[hole, p1] - handicaps[p1]
                 score2 = st.session_state.scores_df.loc[hole, p2] - handicaps[p2]
@@ -77,13 +97,13 @@ for hole in holes:
                 else:
                     match_result_counts[p1][p2]['draw'] += 1
 
-for p1 in selected_players:
-    for p2 in selected_players:
+for p1 in players:
+    for p2 in players:
         if p1 != p2:
             win = match_result_counts[p1][p2]['win']
             draw = match_result_counts[p1][p2]['draw']
             lose = match_result_counts[p1][p2]['lose']
-            total_amount = (win - lose) * 100
+            total_amount = (win - lose) * bet_per_person
             match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ {'+' if total_amount >= 0 else ''}{total_amount}"
 
 st.dataframe(match_summary_df)
