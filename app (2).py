@@ -103,8 +103,16 @@ for hole in holes:
         for p2 in selected_players:
             if p1 != p2:
                 try:
-                    score1 = st.session_state.scores_df.loc[str(hole), p1] - handicaps[p1]
-                    score2 = st.session_state.scores_df.loc[str(hole), p2] - handicaps[p2]
+                    score1 = st.session_state.scores_df.loc[str(hole), p1]
+                    score2 = st.session_state.scores_df.loc[str(hole), p2]
+
+                    # 修正 Series 問題，確保取得的是單一數值
+                    try:
+                        score1 = float(score1) if isinstance(score1, (int, float)) else float(score1.iloc[0])
+                        score2 = float(score2) if isinstance(score2, (int, float)) else float(score2.iloc[0])
+                    except (ValueError, IndexError):
+                        st.error(f'成績讀取錯誤，無法正確讀取第 {hole} 洞的 {p1} 或 {p2} 成績')
+                        continue
                 except KeyError:
                     continue
                 if score1 < score2:
