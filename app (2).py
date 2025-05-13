@@ -101,58 +101,51 @@ if scores_data:
 
     st.warning('⚠️ 尚未完成所有球員的成績輸入')
 
-if st.button('計算賭金結果'):
-    st.subheader("6. 比賽結果（含賭金結算）")
-match_summary_df = pd.DataFrame('', index=selected_players, columns=selected_players)
-match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in selected_players} for p in selected_players}
+# 差點讓桿
+        adj_main = score_main
+        adj_op = score_op
+        if handicaps[op] > handicaps[player_a] and hcp[i] <= (handicaps[op] - handicaps[player_a]):
+            adj_op -= 1
+        elif handicaps[player_a] > handicaps[op] and hcp[i] <= (handicaps[player_a] - handicaps[op]):
+            adj_main -= 1
 
-for hole in holes:
-    for p1 in selected_players:
-        for p2 in selected_players:
-            if p1 != p2:
-                try:
-                    score1 = st.session_state.scores_df.loc[str(hole), p1]
-                    score2 = st.session_state.scores_df.loc[str(hole), p2]
+        # 勝負與賭金處理
+        if adj_op < adj_main:
+            emoji = "👑"
+            bonus = 2 if score_op < par[i] else 1
+            total_earnings[op] += bets[op] * bonus
+            total_earnings[player_a] -= bets[op] * bonus
+            result_tracker[op]["win"] += 1
+            result_tracker[player_a]["lose"] += 1
+        elif adj_op > adj_main:
+            emoji = "👽"
+            bonus = 2 if score_main < par[i] else 1
+            total_earnings[op] -= bets[op] * bonus
+            total_earnings[player_a] += bets[op] * bonus
+            result_tracker[player_a]["win"] += 1
+            result_tracker[op]["lose"] += 1
+        else:
+            emoji = "⚖️"
+            result_tracker[player_a]["tie"] += 1
+            result_tracker[op]["tie"] += 1
 
-                    # 確保轉換成 float，避免 Series 取值錯誤
-                    try:
-                        score1 = float(score1)
-                        score2 = float(score2)
-                    except (ValueError, IndexError):
-                        st.error(f'成績讀取錯誤，無法正確讀取第 {hole} 洞的 {p1} 或 {p2} 成績')
-                        continue
+        birdie_icon = " 🐦" if score_op < par[i] else ""
+        with cols[idx + 1]:
+            st.markdown(
+                f"<div style='text-align:center; margin-bottom:-10px'><strong>{op} 桿數 {emoji}{birdie_icon}</strong></div>",
+                unsafe_allow_html=True
+            )
 
-                    # 修正 Series 問題，確保取得的是單一數值
-                    try:
-                        score1 = float(score1) if isinstance(score1, (int, float)) else float(score1.iloc[0])
-                        score2 = float(score2) if isinstance(score2, (int, float)) else float(score2.iloc[0])
-                    except (ValueError, IndexError):
-                        st.error(f'成績讀取錯誤，無法正確讀取第 {hole} 洞的 {p1} 或 {p2} 成績')
-                        continue
-                except KeyError:
-                    continue
-                score1_adj = score1 - handicaps[p1]
-                score2_adj = score2 - handicaps[p2]
-
-if score1_adj < score2_adj:
-    match_result_counts[p1][p2]['win'] += 1
-elif score1_adj > score2_adj:
-    match_result_counts[p1][p2]['lose'] += 1
-else:
-    match_result_counts[p1][p2]['draw'] += 1
-
-for p1 in selected_players:
-    for p2 in selected_players:
-        if p1 != p2:
-            win = match_result_counts[p1][p2]['win']
-            draw = match_result_counts[p1][p2]['draw']
-            lose = match_result_counts[p1][p2]['lose']
-            total_amount = (win - lose) * bets[p1]
-            match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ {'+' if total_amount >= 0 else ''}{total_amount}"
-
-st.dataframe(match_summary_df)
-
-# 重置功能
-if st.button("重置所有資料"):
-    st.session_state.clear()
-    st.experimental_rerun()
+# 📊 總結
+st.markdown("### 📊 總結結果（含勝負平統計）")
+summary_data = []
+for p in all_players:
+    summary_data.append({
+        "球員": p,
+        "總賭金結算": total_earnings[p],
+        "勝": result_tracker[p]["win"],
+        "負": result_tracker[p]["lose"],
+        "平": result_tracker[p]["tie"]
+    })
+summary_df = pd.DataFrame(summary_data)
+st.dataframe(summary_df.set_index("球員"))
