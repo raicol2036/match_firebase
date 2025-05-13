@@ -30,10 +30,13 @@ hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
 
 # 上傳並選擇球員
 st.subheader('2. 輸入參賽球員')
-st.subheader('2. 輸入參賽球員')
-player_names = st.text_area('輸入參賽球員（用逗號分隔）', 'Player1, Player2').split(',')
-player_names = [p.strip() for p in player_names if p.strip()]
-selected_players = player_names
+players_df = pd.read_csv('players.csv')
+player_names = players_df['name'].tolist()
+selected_players = st.multiselect('選擇參賽球員（至少2人）', player_names)
+
+if len(selected_players) < 2:
+    st.warning('請選擇至少兩位球員參賽。')
+    st.stop()
 if len(selected_players) < 2:
     st.warning('請輸入至少兩位球員名稱。')
     st.stop()
