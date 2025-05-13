@@ -2,90 +2,73 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-st.set_page_config(page_title='Golf Match Play - 1 vs N', layout='wide')
-st.title('⛳ Golf Match Play - 1 vs N')
+# 設定頁面配置
+st.set_page_config(page_title='⛳ 高爾夫比洞賽模擬器', layout='wide')
+st.title('⛳ 高爾夫比洞賽模擬器')
 
-# 初始化資料
+# 初始化球員與洞數
 players = ['A', 'B', 'C', 'D']
 holes = list(range(1, 19))
 
-# 初始化逐洞成績紀錄
-scores_df = pd.DataFrame(index=holes, columns=players)
-scores_df.fillna('', inplace=True)
+# 初始化差點與賭金
+if 'handicaps' not in st.session_state:
+    st.session_state.handicaps = {'A': 0, 'B': 3, 'C': 5, 'D': 8}
+if 'bets' not in st.session_state:
+    st.session_state.bets = {i: 100 for i in holes}
 
-# 初始化對戰結果紀錄
-match_results_df = pd.DataFrame(index=players, columns=players)
-match_results_df.fillna(0, inplace=True)
+# 初始化成績資料
+if 'scores_df' not in st.session_state:
+    np.random.seed(42)
+    scores_data = {player: np.random.randint(3, 6, size=18) for player in players}
+    st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
 
-# 假設一些差點與賭金
-handicaps = {'A': 0, 'B': 3, 'C': 5, 'D': 8}
-bets = {i: 100 for i in range(1, 19)}
+# 顯示可編輯的成績表格
+st.subheader('逐洞成績（可編輯）')
+edited_scores = st.data_editor(
+    st.session_state.scores_df,
+    num_rows="dynamic",
+    use_container_width=True,
+    key="scores_editor"
+)
+st.session_state.scores_df = edited_scores
 
-# 隨機生成成績
-np.random.seed(42)
-for player in players:
-    scores_df[player] = np.random.randint(3, 6, size=18)
+# 計算對戰結果
+match_results_df = pd.DataFrame(0, index=players, columns=players)
+match_summary_df = pd.DataFrame('', index=players, columns=players)
+match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in players} for p in players}
 
-# 顯示逐洞成績
-st.subheader('逐洞成績')
-st.dataframe(scores_df)
-
-# 計算逐洞結果
-for i in range(18):
+for hole in holes:
     for p1 in players:
         for p2 in players:
             if p1 != p2:
-                score1 = scores_df.loc[i + 1, p1]
-                score2 = scores_df.loc[i + 1, p2]
-                # 考慮差點
-                adj_score1 = score1 - handicaps[p1]
-                adj_score2 = score2 - handicaps[p2]
-                # 勝負計算
-                diff = adj_score1 - adj_score2
-                match_results_df.loc[p1, p2] += diff * bets[i + 1]
+                score1 = st.session_state.scores_df.loc[hole, p1] - st.session_state.handicaps[p1]
+                score2 = st.session_state.scores_df.loc[hole, p2] - st.session_state.handicaps[p2]
+                diff = score1 - score2
+                match_results_df.loc[p1, p2] += diff * st.session_state.bets[hole]
+                if diff < 0:
+                    match_result_counts[p1][p2]['win'] += 1
+                elif diff > 0:
+                    match_result_counts[p1][p2]['lose'] += 1
+                else:
+                    match_result_counts[p1][p2]['draw'] += 1
 
 # 顯示對戰結算結果
 st.subheader('對戰結算結果')
 st.dataframe(match_results_df)
 
-# 增加比賽結果顯示：勝 / 平 / 負
-match_summary_df = pd.DataFrame(index=players, columns=players)
-match_summary_df.fillna('', inplace=True)
-
-# 初始化比賽結果紀錄
-match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in players} for p in players}
-
-# 計算逐洞的勝平負結果
-for hole in holes:
-    for p1 in players:
-        for p2 in players:
-            if p1 != p2:
-                score1 = scores_df.loc[hole, p1] - handicaps[p1]
-                score2 = scores_df.loc[hole, p2] - handicaps[p2]
-
-                if score1 < score2:
-                    match_result_counts[p1][p2]['win'] += 1
-                elif score1 > score2:
-                    match_result_counts[p1][p2]['lose'] += 1
-                else:
-                    match_result_counts[p1][p2]['draw'] += 1
-
-# 更新比賽結果顯示，增加賭金結算
+# 顯示比賽結果（含賭金結算）
+st.subheader("比賽結果（含賭金結算）")
 for p1 in players:
     for p2 in players:
         if p1 != p2:
             win = match_result_counts[p1][p2]['win']
             draw = match_result_counts[p1][p2]['draw']
             lose = match_result_counts[p1][p2]['lose']
-            # 計算賭金結果：每洞 100 元
             total_amount = (win - lose) * 100
-            # 格式化顯示
-            if total_amount >= 0:
-                match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ +{total_amount}"
-            else:
-                match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ {total_amount}"
-
-# 顯示比賽結果
-st.subheader("比賽結果（含賭金結算）")
+            match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ {'+' if total_amount >= 0 else ''}{total_amount}"
 st.dataframe(match_summary_df)
-""
+
+# 重置功能
+if st.button("重置所有資料"):
+    st.session_state.clear()
+    st.experimental_rerun()
