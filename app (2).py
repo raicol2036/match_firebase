@@ -67,10 +67,16 @@ if st.button('生成逐洞成績'):
     st.success('✅ 成績已成功生成！')
     st.dataframe(st.session_state.scores_df)
 
-# 顯示總結
-st.subheader('📊 總結結果')
+# 📊 總結
+st.markdown("### 📊 總結結果（含勝負平統計）")
 summary_data = []
-for p in selected_players:
-    summary_data.append({"球員": p, "總賭金": bets[p]})
+for p in all_players:
+    summary_data.append({
+        "球員": p,
+        "總賭金結算": total_earnings[p],
+        "勝": result_tracker[p]["win"],
+        "負": result_tracker[p]["lose"],
+        "平": result_tracker[p]["tie"]
+    })
 summary_df = pd.DataFrame(summary_data)
 st.dataframe(summary_df.set_index("球員"))
