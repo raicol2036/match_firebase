@@ -79,18 +79,18 @@ scores_data = {}
 for player in selected_players:
     if len(quick_scores[player]) == 18:
         scores_data[player] = [int(x) for x in quick_scores[player]]
-    else:
+    
         st.warning(f'{player} 的快速成績尚未完成輸入')
 
 
-    else:
+    
         st.warning(f'{player} 的快速成績尚未完成輸入')
 
 # 更新到 DataFrame
 if scores_data:
     st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
     st.dataframe(st.session_state.scores_df)
-else:
+
     st.warning('⚠️ 尚未完成所有球員的成績輸入')
 
 if st.button('計算賭金結果'):
@@ -111,7 +111,7 @@ for hole in holes:
                     match_result_counts[p1][p2]['win'] += 1
                 elif score1 > score2:
                     match_result_counts[p1][p2]['lose'] += 1
-                else:
+                
                     match_result_counts[p1][p2]['draw'] += 1
 
 for p1 in selected_players:
