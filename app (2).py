@@ -24,8 +24,8 @@ players_df = pd.read_csv('players.csv')
 player_names = players_df['name'].tolist()
 selected_players = st.multiselect("選擇參賽球員（至少2人）", player_names)
 if len(selected_players) < 2:
-st.warning("請選擇至少兩位球員參賽。")
-st.stop()
+    st.warning("請選擇至少兩位球員參賽。")
+    st.stop()
 else:
     st.warning("請上傳包含欄位 'name' 的 players.csv 檔案。")
     st.stop()
