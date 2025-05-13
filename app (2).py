@@ -1,72 +1,82 @@
-import streamlit as st
 import pandas as pd
+import numpy as np
 
-st.set_page_config(page_title="高爾夫 Match play - 1 vs N", layout="wide")
-st.title("高爾夫 Match play - 1 vs N")
+# 初始化資料
+players = ['A', 'B', 'C', 'D']
+holes = list(range(1, 19))
 
-# 讀取資料
-course_df = pd.read_csv("course_db.csv")
-players_df = pd.read_csv("players.csv")
+# 初始化逐洞成績紀錄
+scores_df = pd.DataFrame(index=holes, columns=players)
+scores_df.fillna('', inplace=True)
 
-# 選擇球場與區域
-course_name = st.selectbox("選擇球場", course_df["course_name"].unique())
-zones = course_df[course_df["course_name"] == course_name]["area"].unique()
-zone_front = st.selectbox("前九洞區域", zones)
-zone_back = st.selectbox("後九洞區域", zones)
+# 初始化對戰結果紀錄
+match_results_df = pd.DataFrame(index=players, columns=players)
+match_results_df.fillna(0, inplace=True)
 
-# 整理球場資料
-holes_front = course_df[(course_df["course_name"] == course_name) & (course_df["area"] == zone_front)].sort_values("hole")
-holes_back = course_df[(course_df["course_name"] == course_name) & (course_df["area"] == zone_back)].sort_values("hole")
-holes = pd.concat([holes_front, holes_back]).reset_index(drop=True)
-par = holes["par"].tolist()
-hcp = holes["hcp"].tolist()
+# 假設一些差點與賭金
+handicaps = {'A': 0, 'B': 3, 'C': 5, 'D': 8}
+bets = {i: 100 for i in range(1, 19)}
 
-# 選擇參賽球員
-st.markdown("### 參賽球員設定")
-player_list = players_df["name"].tolist()
-selected_players = st.multiselect("選擇參賽球員（至少兩位）", player_list)
+# 隨機生成成績
+np.random.seed(42)
+for player in players:
+    scores_df[player] = np.random.randint(3, 6, size=18)
 
-# 初始化 Session State
-if 'players' not in st.session_state:
-    st.session_state['players'] = []
-if 'quick_scores' not in st.session_state:
-    st.session_state['quick_scores'] = {}
+# 計算逐洞結果
+for i in range(18):
+    for p1 in players:
+        for p2 in players:
+            if p1 != p2:
+                score1 = scores_df.loc[i + 1, p1]
+                score2 = scores_df.loc[i + 1, p2]
+                # 考慮差點
+                adj_score1 = score1 - handicaps[p1]
+                adj_score2 = score2 - handicaps[p2]
+                # 勝負計算
+                diff = adj_score1 - adj_score2
+                match_results_df.loc[p1, p2] += diff * bets[i + 1]
 
-# 生成設定
-if st.button("生成快速輸入與差點設定"):
-    if len(selected_players) < 2:
-        st.warning("⚠️ 至少需要兩位球員才能進行比賽。")
-    else:
-        st.session_state['players'] = selected_players
-        st.session_state['quick_scores'] = {p: "" for p in selected_players}
-        st.success("初始化完成！")
+import ace_tools as tools; tools.display_dataframe_to_user(name="逐洞成績", dataframe=scores_df)
+tools.display_dataframe_to_user(name="對戰結算結果", dataframe=match_results_df)
+# 增加比賽結果顯示：勝 / 平 / 負
+match_summary_df = pd.DataFrame(index=players, columns=players)
+match_summary_df.fillna('', inplace=True)
 
-# 顯示快速輸入
-if st.session_state['players']:
-    st.markdown("### 快速成績輸入 (18碼)")
-    for player in st.session_state['players']:
-        st.subheader(f"{player} - 成績輸入")
-        # 顯示輸入框，限制最大長度為 18
-        input_value = st.text_input(f"{player} 18 碼成績（18位數）", 
-                                    value=st.session_state['quick_scores'][player], 
-                                    max_chars=18, key=f"quick_input_{player}")
-        
-        # 顯示目前輸入的長度
-        st.markdown(f"📝 已輸入長度: **{len(input_value)} / 18**")
-        
-        # 更新 Session State
-        st.session_state['quick_scores'][player] = input_value
+# 初始化比賽結果紀錄
+match_result_counts = {p: {op: {'win': 0, 'draw': 0, 'lose': 0} for op in players} for p in players}
 
-# 對戰比分計算
-if st.button("同步更新所有比分"):
-    all_valid = True
-    for player, score_str in st.session_state['quick_scores'].items():
-        if len(score_str) != 18 or not score_str.isdigit():
-            st.error(f"⚠️ {player} 的成績輸入無效，必須是 18 位數字！")
-            all_valid = False
-    
-    if all_valid:
-        st.success("所有成績已同步更新！")
-        # 解析成績並儲存
-        for player, score_str in st.session_state['quick_scores'].items():
-            st.session_state[f"score_{player}"] = [int(c) for c in score_str]
+# 計算逐洞的勝平負結果
+for hole in holes:
+    for p1 in players:
+        for p2 in players:
+            if p1 != p2:
+                score1 = scores_df.loc[hole, p1] - handicaps[p1]
+                score2 = scores_df.loc[hole, p2] - handicaps[p2]
+
+                if score1 < score2:
+                    match_result_counts[p1][p2]['win'] += 1
+                elif score1 > score2:
+                    match_result_counts[p1][p2]['lose'] += 1
+                else:
+                    match_result_counts[p1][p2]['draw'] += 1
+
+# 更新比賽結果顯示，增加賭金結算
+match_summary_df = pd.DataFrame(index=players, columns=players)
+match_summary_df.fillna('', inplace=True)
+
+# 更新顯示：勝/平/負 + 金額結算
+for p1 in players:
+    for p2 in players:
+        if p1 != p2:
+            win = match_result_counts[p1][p2]['win']
+            draw = match_result_counts[p1][p2]['draw']
+            lose = match_result_counts[p1][p2]['lose']
+            # 計算賭金結果：每洞 100 元
+            total_amount = (win - lose) * 100
+            # 格式化顯示
+            if total_amount >= 0:
+                match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ +{total_amount}"
+            else:
+                match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ {total_amount}"
+
+import ace_tools as tools; tools.display_dataframe_to_user(name="比賽結果（含賭金結算）", dataframe=match_summary_df)
