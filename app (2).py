@@ -10,12 +10,11 @@ st.title('⛳ 高爾夫比洞賽模擬器')
 st.subheader('1. 選擇球場')
 course_df = pd.read_csv('course_db.csv')
 course_names = course_df['course_name'].unique()
-    selected_course = st.selectbox("選擇球場", course_names)
-    course_info = course_df[course_df['course_name'] == selected_course]
-    holes = course_info['hole'].tolist()
-    pars = course_info['par'].tolist()
-    hcp = course_info['hcp'].tolist()
-else:
+selected_course = st.selectbox("選擇球場", course_names)
+course_info = course_df[course_df['course_name'] == selected_course]
+holes = course_info['hole'].tolist()
+pars = course_info['par'].tolist()
+hcp = course_info['hcp'].tolist()
     st.warning("請上傳包含欄位 'course_name', 'area', 'hole', 'hcp', 'par' 的 course_db.csv 檔案。")
     st.stop()
 
