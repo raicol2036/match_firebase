@@ -101,7 +101,8 @@ for hole in holes:
                 try:
                     score1 = st.session_state.scores_df.loc[str(hole), p1] - handicaps[p1]
                     score2 = st.session_state.scores_df.loc[str(hole), p2] - handicaps[p2]
-                except KeyError:\n                    continue
+                except KeyError:
+                    continue
                 if score1 < score2:
                     match_result_counts[p1][p2]['win'] += 1
                 elif score1 > score2:
