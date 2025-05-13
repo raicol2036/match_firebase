@@ -81,7 +81,14 @@ for player in selected_players:
         try:
             scores_data[player] = [int(d) for d in quick_scores[player]]
         except ValueError:
-            st.error(f'{player} 的快速成績包含非數字的字符')  
+            st.error(f'{player} 的快速成績包含非數字的字符')
+        
+    
+        
+
+
+    
+        
 
 # 更新到 DataFrame
 if scores_data:
@@ -107,6 +114,14 @@ for hole in holes:
                     score1 = st.session_state.scores_df.loc[str(hole), p1]
                     score2 = st.session_state.scores_df.loc[str(hole), p2]
 
+                    # 確保轉換成 float，避免 Series 取值錯誤
+                    try:
+                        score1 = float(score1)
+                        score2 = float(score2)
+                    except (ValueError, IndexError):
+                        st.error(f'成績讀取錯誤，無法正確讀取第 {hole} 洞的 {p1} 或 {p2} 成績')
+                        continue
+
                     # 修正 Series 問題，確保取得的是單一數值
                     try:
                         score1 = float(score1) if isinstance(score1, (int, float)) else float(score1.iloc[0])
@@ -118,13 +133,13 @@ for hole in holes:
                     continue
                 score1_adj = score1 - handicaps[p1]
                 score2_adj = score2 - handicaps[p2]
+
 if score1_adj < score2_adj:
     match_result_counts[p1][p2]['win'] += 1
 elif score1_adj > score2_adj:
     match_result_counts[p1][p2]['lose'] += 1
 else:
     match_result_counts[p1][p2]['draw'] += 1
-
 
 for p1 in selected_players:
     for p2 in selected_players:
