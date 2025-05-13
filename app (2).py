@@ -9,7 +9,7 @@ st.title('⛳ 高爾夫比洞賽模擬器')
 # 上傳並選擇球場
 st.subheader('1. 選擇球場')
 course_df = pd.read_csv('course_db.csv')
-    course_names = course_df['course_name'].unique()
+course_names = course_df['course_name'].unique()
     selected_course = st.selectbox("選擇球場", course_names)
     course_info = course_df[course_df['course_name'] == selected_course]
     holes = course_info['hole'].tolist()
