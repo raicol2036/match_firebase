@@ -1,5 +1,9 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
+
+st.set_page_config(page_title='Golf Match Play - 1 vs N', layout='wide')
+st.title('⛳ Golf Match Play - 1 vs N')
 
 # 初始化資料
 players = ['A', 'B', 'C', 'D']
@@ -22,6 +26,10 @@ np.random.seed(42)
 for player in players:
     scores_df[player] = np.random.randint(3, 6, size=18)
 
+# 顯示逐洞成績
+st.subheader('逐洞成績')
+st.dataframe(scores_df)
+
 # 計算逐洞結果
 for i in range(18):
     for p1 in players:
@@ -36,8 +44,10 @@ for i in range(18):
                 diff = adj_score1 - adj_score2
                 match_results_df.loc[p1, p2] += diff * bets[i + 1]
 
-import ace_tools as tools; tools.display_dataframe_to_user(name="逐洞成績", dataframe=scores_df)
-tools.display_dataframe_to_user(name="對戰結算結果", dataframe=match_results_df)
+# 顯示對戰結算結果
+st.subheader('對戰結算結果')
+st.dataframe(match_results_df)
+
 # 增加比賽結果顯示：勝 / 平 / 負
 match_summary_df = pd.DataFrame(index=players, columns=players)
 match_summary_df.fillna('', inplace=True)
@@ -61,10 +71,6 @@ for hole in holes:
                     match_result_counts[p1][p2]['draw'] += 1
 
 # 更新比賽結果顯示，增加賭金結算
-match_summary_df = pd.DataFrame(index=players, columns=players)
-match_summary_df.fillna('', inplace=True)
-
-# 更新顯示：勝/平/負 + 金額結算
 for p1 in players:
     for p2 in players:
         if p1 != p2:
@@ -79,4 +85,7 @@ for p1 in players:
             else:
                 match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ {total_amount}"
 
-import ace_tools as tools; tools.display_dataframe_to_user(name="比賽結果（含賭金結算）", dataframe=match_summary_df)
+# 顯示比賽結果
+st.subheader("比賽結果（含賭金結算）")
+st.dataframe(match_summary_df)
+""
