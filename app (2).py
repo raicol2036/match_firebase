@@ -52,10 +52,6 @@ for hole in holes:
                 else:
                     match_result_counts[p1][p2]['draw'] += 1
 
-# 顯示對戰結算結果
-st.subheader('對戰結算結果')
-st.dataframe(match_results_df)
-
 # 顯示比賽結果（含賭金結算）
 st.subheader("比賽結果（含賭金結算）")
 for p1 in players:
