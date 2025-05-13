@@ -62,16 +62,14 @@ for player in selected_players:
         st.success('✅ 完成 18 碼輸入')
 
 # 輸入每洞賭金
-st.subheader('4. 輸入每洞賭金')
-bets = {}
-for i, hole in enumerate(holes):
-    bets[hole] = st.number_input(f"第 {hole} 洞的賭金", min_value=0, value=100, step=10)
+
 
 # 初始化成績資料
 if 'scores_df' not in st.session_state:
     np.random.seed(42)
     scores_data = {player: np.random.randint(3, 6, size=len(holes)) for player in selected_players}
     st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
+    st.session_state.scores_df.index = st.session_state.scores_df.index.map(str)
 
 # 5. 逐洞成績自動代入
 st.subheader('5. 逐洞成績 (自動填入)')
@@ -100,8 +98,12 @@ for hole in holes:
     for p1 in selected_players:
         for p2 in selected_players:
             if p1 != p2:
-                score1 = st.session_state.scores_df.loc[hole, p1] - handicaps[p1]
-                score2 = st.session_state.scores_df.loc[hole, p2] - handicaps[p2]
+                try:
+                    score1 = st.session_state.scores_df.loc[str(hole), p1] - handicaps[p1]
+                    score2 = st.session_state.scores_df.loc[str(hole), p2] - handicaps[p2]
+                except KeyError:
+                    st.error(f'找不到資料：Hole {hole}, {p1} 或 {p2}')
+                    continue
                 if score1 < score2:
                     match_result_counts[p1][p2]['win'] += 1
                 elif score1 > score2:
