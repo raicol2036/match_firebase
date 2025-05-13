@@ -115,9 +115,12 @@ for hole in holes:
                         continue
                 except KeyError:
                     continue
-                if score1 < score2:
+                score1_adj = score1 - handicaps[p1]
+                        score2_adj = score2 - handicaps[p2]
+
+                        if score1_adj < score2_adj:
                     match_result_counts[p1][p2]['win'] += 1
-                elif score1 > score2:
+                elif score1_adj > score2_adj:
                     match_result_counts[p1][p2]['lose'] += 1
                 
                     match_result_counts[p1][p2]['draw'] += 1
@@ -128,7 +131,7 @@ for p1 in selected_players:
             win = match_result_counts[p1][p2]['win']
             draw = match_result_counts[p1][p2]['draw']
             lose = match_result_counts[p1][p2]['lose']
-            total_amount = (win - lose) * 100
+            total_amount = (win - lose) * bets[p1]
             match_summary_df.loc[p1, p2] = f"{win}/{draw}/{lose}  $ {'+' if total_amount >= 0 else ''}{total_amount}"
 
 st.dataframe(match_summary_df)
