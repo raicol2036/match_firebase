@@ -31,6 +31,7 @@ hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
 
 # 上傳並選擇球員
 st.subheader('2. 輸入參賽球員')
+st.subheader('2. 輸入參賽球員')
 players_df = pd.read_csv('players.csv')
 player_names = players_df['name'].tolist()
 selected_players = st.multiselect('選擇參賽球員（至少2人）', player_names)
@@ -54,6 +55,14 @@ for player in selected_players:
     bets[player] = st.number_input(f'{player} 的賭金設定', min_value=0, value=100, step=10, key=f'{player}_bet')
     quick_scores[player] = st.text_input(f'{player} 的快速成績輸入（18碼）', key=f'{player}_quick', max_chars=18)
     current_length = len(quick_scores[player])
+    if current_length > 18:
+        st.error(f'⚠️ 輸入過長，目前長度為 {current_length}/18')
+    
+    else:
+        st.success('✅ 完成 18 碼輸入')
+
+# 輸入每洞賭金
+
 
 # 初始化成績資料
 if 'scores_df' not in st.session_state:
@@ -70,6 +79,10 @@ scores_data = {}
 for player in selected_players:
     if len(quick_scores[player]) == 18:
         scores_data[player] = [int(x) for x in quick_scores[player]]
+    else:
+        st.warning(f'{player} 的快速成績尚未完成輸入')
+
+
     else:
         st.warning(f'{player} 的快速成績尚未完成輸入')
 
