@@ -82,10 +82,6 @@ for player in selected_players:
     else:
         st.warning(f'{player} 的快速成績尚未完成輸入')
 
-
-    else:
-        st.warning(f'{player} 的快速成績尚未完成輸入')
-
 # 更新到 DataFrame
 if scores_data:
     st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
