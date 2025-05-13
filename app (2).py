@@ -15,8 +15,8 @@ course_info = course_df[course_df['course_name'] == selected_course]
 holes = course_info['hole'].tolist()
 pars = course_info['par'].tolist()
 hcp = course_info['hcp'].tolist()
-    st.warning("請上傳包含欄位 'course_name', 'area', 'hole', 'hcp', 'par' 的 course_db.csv 檔案。")
-    st.stop()
+st.warning("請上傳包含欄位 'course_name', 'area', 'hole', 'hcp', 'par' 的 course_db.csv 檔案。")
+st.stop()
 
 # 上傳並選擇球員
 st.subheader('2. 輸入參賽球員')
@@ -24,8 +24,8 @@ players_df = pd.read_csv('players.csv')
 player_names = players_df['name'].tolist()
 selected_players = st.multiselect("選擇參賽球員（至少2人）", player_names)
 if len(selected_players) < 2:
-    st.warning("請選擇至少兩位球員參賽。")
-    st.stop()
+st.warning("請選擇至少兩位球員參賽。")
+st.stop()
 else:
     st.warning("請上傳包含欄位 'name' 的 players.csv 檔案。")
     st.stop()
