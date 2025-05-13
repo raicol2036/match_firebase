@@ -106,7 +106,7 @@ for hole in holes:
                     score1 = st.session_state.scores_df.loc[str(hole), p1]
                     score2 = st.session_state.scores_df.loc[str(hole), p2]
 
-                    # 修正 Series 問題，確保取得的是單一數值
+# 修正 Series 問題，確保取得的是單一數值
                     try:
                         score1 = float(score1) if isinstance(score1, (int, float)) else float(score1.iloc[0])
                         score2 = float(score2) if isinstance(score2, (int, float)) else float(score2.iloc[0])
