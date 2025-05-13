@@ -28,7 +28,9 @@ holes = front_info['hole'].tolist() + back_info['hole'].tolist()
 pars = front_info['par'].tolist() + back_info['par'].tolist()
 hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
 
+
 # 上傳並選擇球員
+st.subheader('2. 輸入參賽球員')
 st.subheader('2. 輸入參賽球員')
 players_df = pd.read_csv('players.csv')
 player_names = players_df['name'].tolist()
@@ -55,6 +57,15 @@ for player in selected_players:
     current_length = len(quick_scores[player])
     if current_length > 18:
         st.error(f'⚠️ 輸入過長，目前長度為 {current_length}/18')
+    
+    else:
+        st.success('✅ 完成 18 碼輸入')
+
+# 輸入每洞賭金
+st.subheader('4. 輸入每洞賭金')
+bets = {}
+for i, hole in enumerate(holes):
+    bets[hole] = st.number_input(f"第 {hole} 洞的賭金", min_value=0, value=100, step=10)
 
 # 初始化成績資料
 if 'scores_df' not in st.session_state:
@@ -62,15 +73,23 @@ if 'scores_df' not in st.session_state:
     scores_data = {player: np.random.randint(3, 6, size=len(holes)) for player in selected_players}
     st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
 
-# 顯示可編輯的成績表格
-st.subheader('5. 逐洞成績（可編輯）')
-edited_scores = st.data_editor(
-    st.session_state.scores_df,
-    num_rows="dynamic",
-    use_container_width=True,
-    key="scores_editor"
-)
-st.session_state.scores_df = edited_scores
+# 5. 逐洞成績自動代入
+st.subheader('5. 逐洞成績 (自動填入)')
+
+# 根據快速輸入的值填入成績表
+scores_data = {}
+for player in selected_players:
+    if len(quick_scores[player]) == 18:
+        scores_data[player] = [int(x) for x in quick_scores[player]]
+    else:
+        st.warning(f'{player} 的快速成績尚未完成輸入')
+
+# 更新到 DataFrame
+if scores_data:
+    st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
+    st.dataframe(st.session_state.scores_df)
+else:
+    st.warning('⚠️ 尚未完成所有球員的成績輸入')
 
 # 計算比賽結果（含賭金結算）
 st.subheader("6. 比賽結果（含賭金結算）")
