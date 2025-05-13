@@ -42,7 +42,7 @@ if len(selected_players) < 2:
     st.stop()
 
 # 輸入個人差點
-st.subheader('3. 輸入個人差點與每洞賭金')
+st.subheader('3. 輸入個人差點、賭金與快速成績')
 handicaps = {}
 bets = {}
 quick_scores = {}
@@ -50,15 +50,15 @@ quick_scores = {}
 for player in selected_players:
     st.markdown(f'### {player}')
     handicaps[player] = st.number_input(f'{player} 的差點', min_value=0, max_value=54, value=0, step=1, key=f'{player}_hcp')
-    bets[player] = st.text_input(f'{player} 的每洞賭金 (用逗號分隔，共18個)', value='100,'*18, key=f'{player}_bets')
-    quick_scores[player] = st.text_input(f'{player} 的快速成績輸入（18碼）', key=f'{player}_quick')
-    
-    # 計算目前輸入數
+    bets[player] = st.number_input(f'{player} 的賭金設定', min_value=0, value=100, step=10, key=f'{player}_bet')
+    quick_scores[player] = st.text_input(f'{player} 的快速成績輸入（18碼）', key=f'{player}_quick', max_chars=18)
     current_length = len(quick_scores[player])
     if current_length > 18:
         st.error(f'⚠️ 輸入過長，目前長度為 {current_length}/18')
+    elif current_length < 18:
+        st.warning(f'⚠️ 尚未完成輸入，目前長度：{current_length}/18')
     else:
-        st.info(f'目前輸入長度：{current_length}/18')
+        st.success('✅ 完成 18 碼輸入')
 
 # 初始化成績資料
 if 'scores_df' not in st.session_state:
