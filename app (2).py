@@ -58,7 +58,7 @@ for player in selected_players:
     if current_length > 18:
         st.error(f'⚠️ 輸入過長，目前長度為 {current_length}/18')
     
-    else:
+    
         st.success('✅ 完成 18 碼輸入')
 
 # 輸入每洞賭金
