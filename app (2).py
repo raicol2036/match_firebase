@@ -31,7 +31,6 @@ hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
 
 # 上傳並選擇球員
 st.subheader('2. 輸入參賽球員')
-st.subheader('2. 輸入參賽球員')
 players_df = pd.read_csv('players.csv')
 player_names = players_df['name'].tolist()
 selected_players = st.multiselect('選擇參賽球員（至少2人）', player_names)
@@ -77,13 +76,14 @@ if st.button('生成逐洞成績'):
 # 根據快速輸入的值填入成績表
 scores_data = {}
 for player in selected_players:
-    if len(quick_scores[player]) == 18 and quick_scores[player].isdigit():
+    if len(quick_scores[player]) == 18:
+        try:
+            scores_data[player] = [int(quick_scores[player][i:i + 1]) for i in range(0, 18)]
+        except ValueError:
+            st.error(f'{player} 的快速成績包含非數字的字符')
         scores_data[player] = [int(x) for x in quick_scores[player]]
     
-        st.warning(f'{player} 的快速成績尚未完成輸入')
-
-
-    
+        if len(quick_scores[player]) < 18:
         st.warning(f'{player} 的快速成績尚未完成輸入')
 
 # 更新到 DataFrame
