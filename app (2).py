@@ -68,7 +68,7 @@ for player in selected_players:
 if 'scores_df' not in st.session_state:
     np.random.seed(42)
     scores_data = {player: np.random.randint(3, 6, size=len(holes)) for player in selected_players}
-    st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
+    st.session_state.scores_df = pd.DataFrame(scores_data, index=[str(h) for h in holes])
     st.session_state.scores_df.index = st.session_state.scores_df.index.map(str)
 
 if st.button('生成逐洞成績'):
@@ -77,7 +77,7 @@ if st.button('生成逐洞成績'):
 # 根據快速輸入的值填入成績表
 scores_data = {}
 for player in selected_players:
-    if len(quick_scores[player]) == 18:
+    if len(quick_scores[player]) == 18 and quick_scores[player].isdigit():
         scores_data[player] = [int(x) for x in quick_scores[player]]
     
         st.warning(f'{player} 的快速成績尚未完成輸入')
@@ -89,7 +89,11 @@ for player in selected_players:
 # 更新到 DataFrame
 if scores_data:
     st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
-    st.dataframe(st.session_state.scores_df)
+    if not st.session_state.scores_df.empty:
+        st.success('✅ 成績已成功生成！')
+        st.dataframe(st.session_state.scores_df)
+    else:
+        st.error('⚠️ 成績表生成失敗，請確認快速輸入是否正確填滿 18 碼。')
 
     st.warning('⚠️ 尚未完成所有球員的成績輸入')
 
