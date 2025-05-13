@@ -29,8 +29,8 @@ selected_players = st.multiselect("選擇參賽球員（至少兩位）", player
 # 初始化 Session State
 if 'players' not in st.session_state:
     st.session_state['players'] = []
-if 'score_tracker' not in st.session_state:
-    st.session_state['score_tracker'] = {}
+if 'quick_scores' not in st.session_state:
+    st.session_state['quick_scores'] = {}
 
 # 生成設定
 if st.button("生成快速輸入與差點設定"):
@@ -38,24 +38,35 @@ if st.button("生成快速輸入與差點設定"):
         st.warning("⚠️ 至少需要兩位球員才能進行比賽。")
     else:
         st.session_state['players'] = selected_players
-        st.session_state['score_tracker'] = {
-            f"score_{p}_{i}": par[i] for p in selected_players for i in range(18)
-        }
+        st.session_state['quick_scores'] = {p: "" for p in selected_players}
         st.success("初始化完成！")
 
 # 顯示快速輸入
 if st.session_state['players']:
-    st.markdown("### 快速成績輸入")
+    st.markdown("### 快速成績輸入 (18碼)")
     for player in st.session_state['players']:
         st.subheader(f"{player} - 成績輸入")
-        for i in range(18):
-            st.number_input(f"{player} - 第 {i+1} 洞", min_value=1, max_value=15, 
-                            value=st.session_state['score_tracker'][f"score_{player}_{i}"], 
-                            key=f"score_{player}_{i}")
+        # 顯示輸入框，限制最大長度為 18
+        input_value = st.text_input(f"{player} 18 碼成績（18位數）", 
+                                    value=st.session_state['quick_scores'][player], 
+                                    max_chars=18, key=f"quick_input_{player}")
+        
+        # 顯示目前輸入的長度
+        st.markdown(f"📝 已輸入長度: **{len(input_value)} / 18**")
+        
+        # 更新 Session State
+        st.session_state['quick_scores'][player] = input_value
 
 # 對戰比分計算
 if st.button("同步更新所有比分"):
-    for key in st.session_state['score_tracker']:
-        st.session_state['score_tracker'][key] = st.session_state.get(key, par[0])
-    st.success("所有比分已同步更新")
-
+    all_valid = True
+    for player, score_str in st.session_state['quick_scores'].items():
+        if len(score_str) != 18 or not score_str.isdigit():
+            st.error(f"⚠️ {player} 的成績輸入無效，必須是 18 位數字！")
+            all_valid = False
+    
+    if all_valid:
+        st.success("所有成績已同步更新！")
+        # 解析成績並儲存
+        for player, score_str in st.session_state['quick_scores'].items():
+            st.session_state[f"score_{player}"] = [int(c) for c in score_str]
