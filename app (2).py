@@ -13,12 +13,20 @@ course_names = course_df['course_name'].unique()
 selected_course = st.selectbox("選擇球場", course_names)
 course_info = course_df[course_df['course_name'] == selected_course]
 areas = course_info['area'].unique().tolist()
-selected_area = st.selectbox('選擇區域', areas)
+st.subheader('前九洞區域選擇')
+front_area = st.selectbox('前九洞區域', areas, key='front_area')
 
-filtered_info = course_info[course_info['area'] == selected_area]
-holes = filtered_info['hole'].tolist()
-pars = filtered_info['par'].tolist()
-hcp = filtered_info['hcp'].tolist()
+st.subheader('後九洞區域選擇')
+back_area = st.selectbox('後九洞區域', areas, key='back_area')
+
+# 讀取前後九洞的資料
+front_info = course_info[course_info['area'] == front_area]
+back_info = course_info[course_info['area'] == back_area]
+
+# 組合資料
+holes = front_info['hole'].tolist() + back_info['hole'].tolist()
+pars = front_info['par'].tolist() + back_info['par'].tolist()
+hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
 
 
 # 上傳並選擇球員
