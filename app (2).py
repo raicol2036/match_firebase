@@ -93,8 +93,6 @@ if scores_data:
     else:
         st.error('⚠️ 成績表生成失敗，請確認快速輸入是否正確填滿 18 碼。')
 
-    st.warning('⚠️ 尚未完成所有球員的成績輸入')
-
 if st.button('計算賭金結果'):
     st.subheader("6. 比賽結果（含賭金結算）")
 match_summary_df = pd.DataFrame('', index=selected_players, columns=selected_players)
