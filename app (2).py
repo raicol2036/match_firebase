@@ -82,14 +82,7 @@ for player in selected_players:
         except ValueError:
             st.error(f'{player} 的快速成績包含非數字的字符')
         
-    
-        
-
-
-    
-        
-
- 更新到 DataFrame
+ #更新到 DataFrame
 if scores_data:
     st.session_state.scores_df = pd.DataFrame(scores_data, index=[str(h) for h in holes])
     if not st.session_state.scores_df.empty:
