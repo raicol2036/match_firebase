@@ -81,16 +81,7 @@ for player in selected_players:
         try:
             scores_data[player] = [int(d) for d in quick_scores[player]]
         except ValueError:
-            st.error(f'{player} 的快速成績包含非數字的字符')
-        scores_data[player] = [int(x) for x in quick_scores[player]]
-    
-        if len(quick_scores[player]) < 18:
-    st.warning(f'{player} 的快速成績尚未完成輸入')
-
-
-    
-        if len(quick_scores[player]) < 18:
-    st.warning(f'{player} 的快速成績尚未完成輸入')
+            st.error(f'{player} 的快速成績包含非數字的字符')  
 
 # 更新到 DataFrame
 if scores_data:
