@@ -6,37 +6,42 @@ import numpy as np
 st.set_page_config(page_title='⛳ 高爾夫比洞賽模擬器', layout='wide')
 st.title('⛳ 高爾夫比洞賽模擬器')
 
-# 載入資料
-course_df = pd.read_csv("course_db.csv")
-players_df = pd.read_csv("players_db.csv")
+# --- 球場選擇 ---
+course_options = course_df["course_name"].unique().tolist()
+selected_course = st.selectbox("選擇球場", course_options)
 
-# 球場與區域
-course_name = st.selectbox("選擇球場", course_df["course_name"].unique())
-zones = course_df[course_df["course_name"] == course_name]["area"].unique()
-zone_front = st.selectbox("前九洞區域", zones)
-zone_back = st.selectbox("後九洞區域", zones)
+filtered_area = course_df[course_df["course_name"] == selected_course]["area"].unique().tolist()
+front_area = st.selectbox("前九洞區域", filtered_area, key="front_area")
+back_area = st.selectbox("後九洞區域", filtered_area, key="back_area")
 
-holes_front = course_df[(course_df["course_name"] == course_name) & (course_df["area"] == zone_front)].sort_values("hole")
-holes_back = course_df[(course_df["course_name"] == course_name) & (course_df["area"] == zone_back)].sort_values("hole")
-holes = pd.concat([holes_front, holes_back]).reset_index(drop=True)
-par = holes["par"].tolist()
-hcp = holes["hcp"].tolist()
+def get_course_info(cname, area):
+    temp = course_df[(course_df["course_name"] == cname) & (course_df["area"] == area)]
+    temp = temp.sort_values("hole")
+    return temp["par"].tolist(), temp["hcp"].tolist()
 
-st.markdown("### 🎯 球員設定")
-player_list = ["請選擇球員"] + players_df["name"].tolist()
-player_list_with_done = player_list + ["✅ Done"]
+front_par, front_hcp = get_course_info(selected_course, front_area)
+back_par, back_hcp = get_course_info(selected_course, back_area)
+par = front_par + back_par
+hcp = front_hcp + back_hcp
 
-# 輸入個人差點
-st.subheader('3. 輸入個人差點')
-handicaps = {}
-for player in selected_players:
-    handicaps[player] = st.number_input(f"{player} 的差點", min_value=0, max_value=54, value=0, step=1)
+# --- 球員設定 ---
+players = st.multiselect("選擇參賽球員（最多4位）", st.session_state.players, max_selections=4)
 
-# 輸入每洞賭金
-st.subheader('4. 輸入每洞賭金')
-bets = {}
-for i, hole in enumerate(holes):
-    bets[hole] = st.number_input(f"第 {hole} 洞的賭金", min_value=0, value=100, step=10)
+new = st.text_input("新增球員")
+if new:
+    if new not in st.session_state.players:
+        st.session_state.players.append(new)
+        pd.DataFrame({"name": st.session_state.players}).to_csv(CSV_PATH, index=False)
+        st.success(f"✅ 已新增球員 {new} 至資料庫")
+    if new not in players and len(players) < 4:
+        players.append(new)
+
+if len(players) == 0:
+    st.warning("⚠️ 請先選擇至少一位球員")
+    st.stop()
+
+handicaps = {p: st.number_input(f"{p} 差點", 0, 54, 0, key=f"hcp_{p}") for p in players}
+bet_per_person = st.number_input("單局賭金（每人）", 10, 1000, 100)
 
 # 初始化成績資料
 if 'scores_df' not in st.session_state:
