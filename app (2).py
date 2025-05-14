@@ -57,46 +57,49 @@ for player in selected_players:
         st.success(f'✅ {player} 成績已完成輸入')
 
 # 初始化成績資料
-if 'scores_df' not in st.session_state:
-    st.session_state.scores_df = pd.DataFrame('', index=holes, columns=selected_players)
+scores_data = {}
+for player in selected_players:
+    scores_data[player] = [int(d) for d in quick_scores[player]]
 
-if st.button('生成逐洞成績'):
-    scores_data = {}
-    for player in selected_players:
-        if len(quick_scores[player]) == 18 and quick_scores[player].isdigit():
-            scores_data[player] = [int(d) for d in quick_scores[player]]
-        else:
-            st.error(f'⚠️ {player} 的快速成績輸入錯誤，請檢查')
-            continue
-    st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
-    st.success('✅ 成績已成功生成！')
-    st.dataframe(st.session_state.scores_df)
+scores_df = pd.DataFrame(scores_data, index=holes)
+
+# 顯示生成的成績表
+st.write("### 逐洞成績：")
+st.dataframe(scores_df)
+
 # 初始化賭金結算與結果追蹤
 total_earnings = {p: 0 for p in selected_players}
 result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
 
-# 初始化選手資料
-for p in selected_players:
-    result_tracker[p] = {"win": 0, "lose": 0, "tie": 0}
-
-# 假設這裡有一個判斷勝負的邏輯（範例）
+# 🎯 **計算逐洞結果**
 for hole in holes:
-    scores = st.session_state.scores_df.loc[hole]
-    min_score = scores.min()
-    winners = scores[scores == min_score].index.tolist()
+    # 取得該洞的成績
+    scores = scores_df.loc[hole]
     
+    # 計算讓桿後的成績
+    adjusted_scores = {player: score - handicaps[player] for player, score in scores.items()}
+    
+    # 找出最低成績
+    min_score = min(adjusted_scores.values())
+    winners = [p for p, s in adjusted_scores.items() if s == min_score]
+
     if len(winners) == 1:
+        # 單一贏家
         winner = winners[0]
-        total_earnings[winner] += bets[winner]
+        total_earnings[winner] += sum(bets.values())
         result_tracker[winner]["win"] += 1
+        
+        # 其他人減少賭金
         for player in selected_players:
             if player != winner:
                 total_earnings[player] -= bets[player]
                 result_tracker[player]["lose"] += 1
     else:
+        # 平手情況
         for player in winners:
             result_tracker[player]["tie"] += 1
-# 📊 總結
+
+# ✅ **顯示總表**
 st.markdown("### 📊 總結結果（含勝負平統計）")
 summary_data = []
 for p in selected_players:
@@ -108,5 +111,3 @@ for p in selected_players:
         "平": result_tracker[p]["tie"]
     })
 summary_df = pd.DataFrame(summary_data)
-st.dataframe(summary_df.set_index("球員"))
-
