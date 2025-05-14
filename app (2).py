@@ -70,7 +70,7 @@ if st.button('生成逐洞成績'):
 # 📊 總結
 st.markdown("### 📊 總結結果（含勝負平統計）")
 summary_data = []
-for p in all_players:
+for p in selected_players:
     summary_data.append({
         "球員": p,
         "總賭金結算": total_earnings[p],
