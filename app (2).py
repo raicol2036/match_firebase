@@ -1,6 +1,15 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+# 匯入 collections 模組
+from collections import defaultdict
+
+# 使用 defaultdict 避免 KeyError
+result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
+
+# 初始化選手資料
+for p in selected_players:
+    result_tracker[p] = {"win": 0, "lose": 0, "tie": 0}
 
 # 設定頁面配置
 st.set_page_config(page_title='⛳ 高爾夫比洞賽模擬器', layout='wide')
