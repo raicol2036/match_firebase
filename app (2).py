@@ -66,6 +66,27 @@ if st.button('生成逐洞成績'):
     st.session_state.scores_df = pd.DataFrame(scores_data, index=holes)
     st.success('✅ 成績已成功生成！')
     st.dataframe(st.session_state.scores_df)
+# 初始化賭金結算與結果追蹤
+total_earnings = {p: 0 for p in selected_players}
+result_tracker = {p: {"win": 0, "lose": 0, "tie": 0} for p in selected_players}
+
+# 假設這裡有一個判斷勝負的邏輯（範例）
+for hole in holes:
+    scores = st.session_state.scores_df.loc[hole]
+    min_score = scores.min()
+    winners = scores[scores == min_score].index.tolist()
+    
+    if len(winners) == 1:
+        winner = winners[0]
+        total_earnings[winner] += bets[winner]
+        result_tracker[winner]["win"] += 1
+        for player in selected_players:
+            if player != winner:
+                total_earnings[player] -= bets[player]
+                result_tracker[player]["lose"] += 1
+    else:
+        for player in winners:
+            result_tracker[player]["tie"] += 1
 
 # 📊 總結
 st.markdown("### 📊 總結結果（含勝負平統計）")
@@ -80,3 +101,4 @@ for p in selected_players:
     })
 summary_df = pd.DataFrame(summary_data)
 st.dataframe(summary_df.set_index("球員"))
+
