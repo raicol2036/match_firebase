@@ -68,7 +68,11 @@ if st.button('生成逐洞成績'):
     st.dataframe(st.session_state.scores_df)
 # 初始化賭金結算與結果追蹤
 total_earnings = {p: 0 for p in selected_players}
-result_tracker = {p: {"win": 0, "lose": 0, "tie": 0} for p in selected_players}
+result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
+
+# 初始化選手資料
+for p in selected_players:
+    result_tracker[p] = {"win": 0, "lose": 0, "tie": 0}
 
 # 假設這裡有一個判斷勝負的邏輯（範例）
 for hole in holes:
@@ -87,7 +91,6 @@ for hole in holes:
     else:
         for player in winners:
             result_tracker[player]["tie"] += 1
-
 # 📊 總結
 st.markdown("### 📊 總結結果（含勝負平統計）")
 summary_data = []
