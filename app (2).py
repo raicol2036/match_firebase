@@ -105,29 +105,33 @@ if st.button('生成逐洞成绩及对战结果'):
         hole_hcp = hcp[hole_idx]
         hole_results = {"球洞": hole, "难度": hole_hcp}
         
-        # 获取原始成绩
-        raw_scores = scores_df.loc[hole][selected_players].to_dict()
-        
-        # 计算让杆后的成绩
-        adjusted_scores = {}
-        for player in selected_players:
-            # 基本调整成绩 = 原始成绩 - 球员差点
-            adjusted_score = raw_scores[player] - handicaps[player]
-            
-            # 让杆调整：差点低的让杆给差点高的
-            for other in selected_players:
-                if player != other:
-                    hdcp_diff = handicaps[player] - handicaps[other]
-                    # 如果当前球员差点较低，且此洞难度在让杆范围内
-                    if hdcp_diff < 0 and 1 <= hole_hcp <= abs(hdcp_diff):
-                        adjusted_score += 1  # 让一杆
-            
-            adjusted_scores[player] = adjusted_score
-            hole_results[f"{player}(调整后)"] = adjusted_score
-        
-        # 找出最低成绩和赢家
-        min_score = min(adjusted_scores.values())
-        winners = [p for p, s in adjusted_scores.items() if s == min_score]
+       # 不在此處調整成績，直接用 raw_scores
+raw_scores = scores_df.loc[hole][selected_players].to_dict()
+
+# 設置讓桿的玩家和洞
+player_scores_for_comparison = {}
+
+for player in selected_players:
+    # 確定是否該玩家的洞該讓桿
+    is_handed = False
+    for other in selected_players:
+        if player != other:
+            hdcap_diff = handicaps[player] - handicaps[other]
+            # 若差點較低，且此洞HCP在差點差範圍內，則讓他
+            if hdcap_diff < 0 and 1 <= hole_hcp <= abs(hdcap_diff):
+                is_handed = True
+                break
+
+    # 該玩家的分數，根據讓桿效果修正
+    score = raw_scores[player]
+    if is_handed:
+        score += 1  # 模擬讓一桿的效果
+
+    player_scores_for_comparison[player] = score
+
+# 找出最小分數，即勝利者（讓桿後）
+min_score = min(player_scores_for_comparison.values())
+winners = [p for p, s in player_scores_for_comparison.items() if s == min_score]
 
         # 记录洞结果
         if len(winners) == 1:
