@@ -86,38 +86,49 @@ if st.button('生成逐洞成績及對戰結果'):
 
     # ... (前面的代碼保持不變，直到計算逐洞結果的部分)
 
-    # 🎯 計算逐洞結果
+    # 🎯 计算逐洞结果
     for hole_idx, hole in enumerate(holes):
-        # 取得該洞的原始成績
+        # 取得该洞的原始成绩
         scores = scores_df.loc[hole]
         
-        # 取得該洞的難度指數 (hcp)
+        # 取得该洞的难度指数 (hcp)
         hole_hcp = hcp[hole_idx]
         
-        # 計算調整後的成績
+        # 计算调整后的成绩
         adjusted_scores = {}
         for player in selected_players:
-        # 初始調整成績 = 原始成績 - 球員差點
-            adjusted_score = scores[player] - handicaps[player]
-            
-        # 檢查是否需要讓桿
-            for other_player in selected_players:
-                if player != other_player:
-        # 計算差點差
-                    hdcp_diff = handicaps[player] - handicaps[other_player]
-                    
-        # 如果當前球員差點較低，且此洞難度在讓桿範圍內
-                    if hdcp_diff < 0 and 1 <= hole_hcp <= abs(hdcp_diff):
-                        # 當前球員需要讓桿給其他球員 (增加一桿)
-                        adjusted_score += 1
-            
-            adjusted_scores[player] = adjusted_score
+            try:
+                # 初始调整成绩 = 原始成绩 - 球员差点
+                adjusted_score = int(scores[player]) - handicaps[player]
+                
+                # 检查是否需要让杆
+                for other_player in selected_players:
+                    if player != other_player:
+                        # 计算差点差
+                        hdcp_diff = handicaps[player] - handicaps[other_player]
+                        
+                        # 如果当前球员差点较低，且此洞难度在让杆范围内
+                        if hdcp_diff < 0 and 1 <= hole_hcp <= abs(hdcp_diff):
+                            # 当前球员需要让杆给其他球员 (增加一杆)
+                            adjusted_score += 1
+                
+                adjusted_scores[player] = adjusted_score
+            except (ValueError, TypeError):
+                st.error(f"无效的成绩数据: 球员 {player} 在洞 {hole} 的成绩 '{scores[player]}' 不是有效数字")
+                st.stop()
         
-        # 找出最低成績
-        min_score = min(adjusted_scores.values())
-        winners = [p for p, s in adjusted_scores.items() if s == min_score]
-
-        # ... (後面的勝負計算和結果顯示保持不變)
+        # 检查是否有有效数据
+        if not adjusted_scores:
+            st.error("没有有效的成绩数据可供计算")
+            st.stop()
+        
+        try:
+            # 找出最低成绩
+            min_score = min(adjusted_scores.values())
+            winners = [p for p, s in adjusted_scores.items() if s == min_score]
+        except ValueError as e:
+            st.error(f"计算最小值时出错: {str(e)}")
+            st.stop()
 
         if len(winners) == 1:
             # 單一贏家
