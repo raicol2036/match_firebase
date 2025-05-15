@@ -64,19 +64,31 @@ if st.button('生成逐洞成績及對戰結果'):
         st.error("請確保所有球員的18洞成績已完整輸入")
         st.stop()
     
-    # 初始化成績資料
+    # 初始化成绩数据
     scores_data = {}
     for player in selected_players:
         try:
-            scores_data[player] = [int(d) for d in quick_scores[player]]
-        except:
-            st.error(f"{player}的成績包含非數字字符，請檢查")
+            # 处理成绩输入 - 移除空格并分割成列表
+            score_str = quick_scores[player].strip()
+            if ' ' in score_str:  # 如果输入是用空格分隔的
+                scores = [int(s) for s in score_str.split()]
+            else:  # 如果是连续数字
+                scores = [int(c) for c in score_str]
+            
+            if len(scores) != 18:
+                st.error(f"{player}的成绩必须包含18个洞的数据，当前有{len(scores)}个")
+                st.stop()
+                
+            scores_data[player] = scores
+        except ValueError:
+            st.error(f"{player}的成绩包含非数字字符，请检查")
             st.stop()
 
+    # 创建DataFrame时指定洞号作为索引
     scores_df = pd.DataFrame(scores_data, index=holes)
 
-    # 顯示生成的成績表
-    st.write("### 逐洞成績：")
+    # 显示生成的成绩表
+    st.write("### 逐洞成绩：")
     st.dataframe(scores_df)
 
     # 初始化賭金結算與結果追蹤
