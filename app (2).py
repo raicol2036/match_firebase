@@ -94,26 +94,30 @@ if st.button('生成逐洞成绩及对战结果'):
     result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
     head_to_head = defaultdict(lambda: defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0}))
 
+    # ... (前面的代码保持不变，直到计算逐洞结果的部分)
+
     # 计算逐洞结果
     for hole_idx, hole in enumerate(holes):
         try:
-            scores = scores_df.loc[hole]
+            # 获取该洞所有球员的成绩（转换为字典）
+            scores = scores_df.loc[hole].to_dict()
             hole_hcp = hcp[hole_idx]
             
             adjusted_scores = {}
             for player in selected_players:
-                # 基本调整
+                # 基本调整：原始成绩 - 球员差点
                 adjusted_score = scores[player] - handicaps[player]
                 
-                # 让杆调整
+                # 让杆调整：差点低的让杆给差点高的
                 for other in selected_players:
                     if player != other:
                         hdcp_diff = handicaps[player] - handicaps[other]
                         if hdcp_diff < 0 and 1 <= hole_hcp <= abs(hdcp_diff):
-                            adjusted_score += 1
+                            adjusted_score += 1  # 让一杆
                 
                 adjusted_scores[player] = adjusted_score
             
+            # 找出最低成绩和赢家
             min_score = min(adjusted_scores.values())
             winners = [p for p, s in adjusted_scores.items() if s == min_score]
 
@@ -134,9 +138,12 @@ if st.button('生成逐洞成绩及对战结果'):
                     for other in winners:
                         if player != other:
                             head_to_head[player][other]["tie"] += 1
+                            
         except Exception as e:
             st.error(f"计算洞{hole}时出错: {str(e)}")
-            continue
+            st.stop()
+
+# ... (后面的代码保持不变)
 
     # 显示总结结果
     st.markdown("### 📊 总结结果（含胜负平统计）")
