@@ -99,51 +99,17 @@ if st.button('生成逐洞成績及對戰結果'):
     result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
     head_to_head = defaultdict(lambda: defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0}))
 
-    # ... (前面的代碼保持不變，直到計算逐洞結果的部分)
-
-    # 🎯 计算逐洞结果
-    for hole_idx, hole in enumerate(holes):
-        # 取得该洞的原始成绩
+        # 🎯 計算逐洞結果
+    for hole in holes:
+        # 取得該洞的成績
         scores = scores_df.loc[hole]
         
-        # 取得该洞的难度指数 (hcp)
-        hole_hcp = hcp[hole_idx]
+        # 計算讓桿後的成績
+        adjusted_scores = {player: score - handicaps[player] for player, score in scores.items()}
         
-        # 计算调整后的成绩
-        adjusted_scores = {}
-        for player in selected_players:
-            try:
-                # 初始调整成绩 = 原始成绩 - 球员差点
-                adjusted_score = int(scores[player]) - handicaps[player]
-                
-                # 检查是否需要让杆
-                for other_player in selected_players:
-                    if player != other_player:
-                        # 计算差点差
-                        hdcp_diff = handicaps[player] - handicaps[other_player]
-                        
-                        # 如果当前球员差点较低，且此洞难度在让杆范围内
-                        if hdcp_diff < 0 and 1 <= hole_hcp <= abs(hdcp_diff):
-                            # 当前球员需要让杆给其他球员 (增加一杆)
-                            adjusted_score += 1
-                
-                adjusted_scores[player] = adjusted_score
-            except (ValueError, TypeError):
-                st.error(f"无效的成绩数据: 球员 {player} 在洞 {hole} 的成绩 '{scores[player]}' 不是有效数字")
-                st.stop()
-        
-        # 检查是否有有效数据
-        if not adjusted_scores:
-            st.error("没有有效的成绩数据可供计算")
-            st.stop()
-        
-        try:
-            # 找出最低成绩
-            min_score = min(adjusted_scores.values())
-            winners = [p for p, s in adjusted_scores.items() if s == min_score]
-        except ValueError as e:
-            st.error(f"计算最小值时出错: {str(e)}")
-            st.stop()
+        # 找出最低成績
+        min_score = min(adjusted_scores.values())
+        winners = [p for p, s in adjusted_scores.items() if s == min_score]
 
         if len(winners) == 1:
             # 單一贏家
@@ -165,7 +131,6 @@ if st.button('生成逐洞成績及對戰結果'):
                 for other in winners:
                     if player != other:
                         head_to_head[player][other]["tie"] += 1
-
     # ✅ 顯示總表
     st.markdown("### 📊 總結結果（含勝負平統計）")
     summary_data = []
