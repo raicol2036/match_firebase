@@ -1,184 +1,179 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from collections import defaultdict
 
-# 使用 defaultdict 避免 KeyError
+# 初始化结果跟踪器
 result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
 
-# 設定頁面配置
-st.set_page_config(page_title='⛳ 高爾夫比洞賽模擬器', layout='wide')
-st.title('⛳ 高爾夫比洞賽模擬器')
+# 页面设置
+st.set_page_config(page_title='⛳ 高尔夫比洞赛模拟器', layout='wide')
+st.title('⛳ 高尔夫比洞赛模拟器')
 
-# 上傳並選擇球場
-st.subheader('1. 選擇球場')
+# 1. 选择球场
+st.subheader('1. 选择球场')
 course_df = pd.read_csv('course_db.csv')
 course_names = course_df['course_name'].unique()
-selected_course = st.selectbox("選擇球場", course_names)
+selected_course = st.selectbox("选择球场", course_names)
 course_info = course_df[course_df['course_name'] == selected_course]
 areas = course_info['area'].unique().tolist()
-st.subheader('前九洞區域選擇')
-front_area = st.selectbox('前九洞區域', areas, key='front_area')
-st.subheader('後九洞區域選擇')
-back_area = st.selectbox('後九洞區域', areas, key='back_area')
 
-# 讀取前後九洞的資料
+st.subheader('前九洞区域选择')
+front_area = st.selectbox('前九洞区域', areas, key='front_area')
+st.subheader('后九洞区域选择')
+back_area = st.selectbox('后九洞区域', areas, key='back_area')
+
+# 读取前后九洞数据
 front_info = course_info[course_info['area'] == front_area]
 back_info = course_info[course_info['area'] == back_area]
 
-# 組合資料
+# 组合数据
 holes = front_info['hole'].tolist() + back_info['hole'].tolist()
 pars = front_info['par'].tolist() + back_info['par'].tolist()
 hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
 
-# 上傳並選擇球員
-st.subheader('2. 輸入參賽球員')
+# 2. 输入参赛球员
+st.subheader('2. 输入参赛球员')
 players_df = pd.read_csv('players.csv')
 player_names = players_df['name'].tolist()
-selected_players = st.multiselect('選擇參賽球員（至少2人）', player_names)
+selected_players = st.multiselect('选择参赛球员（至少2人）', player_names)
 
 if len(selected_players) < 2:
-    st.warning('請選擇至少兩位球員參賽。')
+    st.warning('请选择至少两位球员参赛。')
     st.stop()
 
-# 輸入個人差點
-st.subheader('3. 輸入個人差點、賭金與快速成績')
+# 3. 输入个人差点、赌金与快速成绩
+st.subheader('3. 输入个人差点、赌金与快速成绩')
 handicaps = {}
 bets = {}
 quick_scores = {}
 
 for player in selected_players:
     st.markdown(f'### {player}')
-    handicaps[player] = st.number_input(f'{player} 的差點', min_value=0, max_value=54, value=0, step=1)
-    bets[player] = st.number_input(f'{player} 的賭金設定', min_value=0, value=100, step=10)
-    quick_scores[player] = st.text_input(f'{player} 的快速成績輸入（18碼）', max_chars=18, key=f"score_{player}")
+    handicaps[player] = st.number_input(f'{player} 的差点', min_value=0, max_value=54, value=0, step=1, key=f"hdcp_{player}")
+    bets[player] = st.number_input(f'{player} 的赌金设定', min_value=0, value=100, step=10, key=f"bet_{player}")
+    quick_scores[player] = st.text_input(f'{player} 的快速成绩输入（18码）', max_chars=18, key=f"score_{player}")
     if len(quick_scores[player]) == 18:
-        st.success(f'✅ {player} 成績已完成輸入')
+        st.success(f'✅ {player} 成绩已完成输入')
 
-# 添加生成結果按鈕
-if st.button('生成逐洞成績及對戰結果'):
-    # 檢查所有成績是否已輸入
-    all_scores_entered = all(len(quick_scores[player]) == 18 for player in selected_players)
+# 生成结果按钮
+if st.button('生成逐洞成绩及对战结果'):
+    # 检查所有成绩是否已输入
+    all_scores_entered = all(len(quick_scores.get(player, '')) == 18 for player in selected_players)
     
     if not all_scores_entered:
-        st.error("請確保所有球員的18洞成績已完整輸入")
+        st.error("请确保所有球员的18洞成绩已完整输入")
         st.stop()
     
-       # 初始化成绩数据
+    # 初始化成绩数据
     scores_data = {}
     for player in selected_players:
         try:
-            # 处理成绩输入 - 确保是18个数字
-            score_str = quick_scores[player].strip().replace(" ", "")  # 移除所有空格
-            if not score_str.isdigit():
-                st.error(f"{player}的成绩包含非数字字符: {quick_scores[player]}")
+            score_str = quick_scores[player].strip().replace(" ", "")
+            if not score_str.isdigit() or len(score_str) != 18:
+                st.error(f"{player}的成绩必须是18位数字")
                 st.stop()
-                
-            if len(score_str) != 18:
-                st.error(f"{player}必须输入18洞成绩，当前输入了{len(score_str)}个数字")
-                st.stop()
-                
             scores_data[player] = [int(c) for c in score_str]
         except Exception as e:
             st.error(f"处理{player}的成绩时出错: {str(e)}")
             st.stop()
 
-    # 创建DataFrame时明确指定索引和列
-    scores_df = pd.DataFrame(scores_data, index=holes)
-    scores_df.columns = selected_players  # 明确设置列名
+    # 创建DataFrame
+    try:
+        scores_df = pd.DataFrame(scores_data, index=holes)
+        scores_df.columns = selected_players
+        scores_df = scores_df.astype(int)
+    except Exception as e:
+        st.error(f"创建成绩表时出错: {str(e)}")
+        st.stop()
 
-    # 显示生成的成绩表
     st.write("### 逐洞成绩：")
     st.dataframe(scores_df)
 
-    # 确保DataFrame中的数据是整数类型
-    scores_df = scores_df.astype(int)
-
-    # 初始化賭金結算與結果追蹤
+    # 初始化结果跟踪
     total_earnings = {p: 0 for p in selected_players}
     result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
     head_to_head = defaultdict(lambda: defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0}))
 
-        # 🎯 計算逐洞結果
-    for hole in holes:
-        # 取得該洞的成績
-        scores = scores_df.loc[hole]
-        
-        # 計算讓桿後的成績
-        adjusted_scores = {player: score - handicaps[player] for player, score in scores.items()}
-        
-        # 找出最低成績
-        min_score = min(adjusted_scores.values())
-        winners = [p for p, s in adjusted_scores.items() if s == min_score]
-
-        if len(winners) == 1:
-            # 單一贏家
-            winner = winners[0]
-            total_earnings[winner] += sum(bets.values())
-            result_tracker[winner]["win"] += 1
+    # 计算逐洞结果
+    for hole_idx, hole in enumerate(holes):
+        try:
+            scores = scores_df.loc[hole]
+            hole_hcp = hcp[hole_idx]
             
-            # 其他人減少賭金
+            adjusted_scores = {}
             for player in selected_players:
-                if player != winner:
-                    total_earnings[player] -= bets[player]
-                    result_tracker[player]["lose"] += 1
-                    head_to_head[winner][player]["win"] += 1
-                    head_to_head[player][winner]["lose"] += 1
-        else:
-            # 平手情況
-            for player in winners:
-                result_tracker[player]["tie"] += 1
-                for other in winners:
+                # 基本调整
+                adjusted_score = scores[player] - handicaps[player]
+                
+                # 让杆调整
+                for other in selected_players:
                     if player != other:
-                        head_to_head[player][other]["tie"] += 1
-    # ✅ 顯示總表
-    st.markdown("### 📊 總結結果（含勝負平統計）")
+                        hdcp_diff = handicaps[player] - handicaps[other]
+                        if hdcp_diff < 0 and 1 <= hole_hcp <= abs(hdcp_diff):
+                            adjusted_score += 1
+                
+                adjusted_scores[player] = adjusted_score
+            
+            min_score = min(adjusted_scores.values())
+            winners = [p for p, s in adjusted_scores.items() if s == min_score]
+
+            if len(winners) == 1:
+                winner = winners[0]
+                total_earnings[winner] += sum(bets.values())
+                result_tracker[winner]["win"] += 1
+                
+                for player in selected_players:
+                    if player != winner:
+                        total_earnings[player] -= bets[player]
+                        result_tracker[player]["lose"] += 1
+                        head_to_head[winner][player]["win"] += 1
+                        head_to_head[player][winner]["lose"] += 1
+            else:
+                for player in winners:
+                    result_tracker[player]["tie"] += 1
+                    for other in winners:
+                        if player != other:
+                            head_to_head[player][other]["tie"] += 1
+        except Exception as e:
+            st.error(f"计算洞{hole}时出错: {str(e)}")
+            continue
+
+    # 显示总结结果
+    st.markdown("### 📊 总结结果（含胜负平统计）")
     summary_data = []
     for p in selected_players:
         summary_data.append({
-            "球員": p,
-            "總賭金結算": total_earnings[p],
-            "勝": result_tracker[p]["win"],
-            "負": result_tracker[p]["lose"],
+            "球员": p,
+            "总赌金结算": total_earnings[p],
+            "胜": result_tracker[p]["win"],
+            "负": result_tracker[p]["lose"],
             "平": result_tracker[p]["tie"]
         })
-    summary_df = pd.DataFrame(summary_data)
-    st.dataframe(summary_df)
+    st.dataframe(pd.DataFrame(summary_data))
 
-   # 顯示隊員對戰結果表
-    st.markdown("### 🆚 隊員對戰結果 (各自比分模式)")
-    
-    # 創建對戰結果表
+    # 显示对战结果
+    st.markdown("### 🆚 队员对战结果")
     match_results = pd.DataFrame(index=selected_players, columns=selected_players)
     
-    for player1 in selected_players:
-        for player2 in selected_players:
-            if player1 == player2:
-                match_results.loc[player1, player2] = "-"
+    for p1 in selected_players:
+        for p2 in selected_players:
+            if p1 == p2:
+                match_results.loc[p1, p2] = "-"
             else:
-                result = head_to_head[player1][player2]
-                # 計算淨勝洞數 (勝洞 - 負洞)
-                net_holes = result['win'] - result['lose']
-                # 計算賭金差額
-                money_diff = total_earnings[player1] - total_earnings[player2]
-                
-                # 格式化顯示
-                if net_holes > 0:
-                    result_str = f"{net_holes}↑ ${money_diff}"
-                elif net_holes < 0:
-                    result_str = f"{abs(net_holes)}↓ ${money_diff}"
+                res = head_to_head[p1][p2]
+                net = res["win"] - res["lose"]
+                money = total_earnings[p1] - total_earnings[p2]
+                if net > 0:
+                    match_results.loc[p1, p2] = f"{net}↑ ${money}"
+                elif net < 0:
+                    match_results.loc[p1, p2] = f"{abs(net)}↓ ${money}"
                 else:
-                    result_str = f"平 ${money_diff}"
-                
-                match_results.loc[player1, player2] = result_str
+                    match_results.loc[p1, p2] = f"平 ${money}"
     
-    # 使用Styler來美化表格
-    def color_negative_red(val):
-        if isinstance(val, str) and '↓' in val:
-            return 'color: red'
-        elif isinstance(val, str) and '↑' in val:
-            return 'color: green'
+    def color_results(val):
+        if isinstance(val, str):
+            if '↑' in val: return 'color: green'
+            if '↓' in val: return 'color: red'
         return ''
     
-    styled_table = match_results.style.applymap(color_negative_red)
-    st.dataframe(styled_table)
+    st.dataframe(match_results.style.applymap(color_results))
