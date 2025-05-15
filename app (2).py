@@ -180,8 +180,8 @@ if st.button('生成逐洞成績及對戰結果'):
     summary_df = pd.DataFrame(summary_data)
     st.dataframe(summary_df)
 
-    # 顯示隊員對戰結果表
-    st.markdown("### 🆚 隊員對戰結果")
+   # 顯示隊員對戰結果表
+    st.markdown("### 🆚 隊員對戰結果 (各自比分模式)")
     
     # 創建對戰結果表
     match_results = pd.DataFrame(index=selected_players, columns=selected_players)
@@ -192,6 +192,28 @@ if st.button('生成逐洞成績及對戰結果'):
                 match_results.loc[player1, player2] = "-"
             else:
                 result = head_to_head[player1][player2]
-                match_results.loc[player1, player2] = f"勝{result['win']}/平{result['tie']}/負{result['lose']} ${total_earnings[player1] - total_earnings[player2]}"
+                # 計算淨勝洞數 (勝洞 - 負洞)
+                net_holes = result['win'] - result['lose']
+                # 計算賭金差額
+                money_diff = total_earnings[player1] - total_earnings[player2]
+                
+                # 格式化顯示
+                if net_holes > 0:
+                    result_str = f"{net_holes}↑ ${money_diff}"
+                elif net_holes < 0:
+                    result_str = f"{abs(net_holes)}↓ ${money_diff}"
+                else:
+                    result_str = f"平 ${money_diff}"
+                
+                match_results.loc[player1, player2] = result_str
     
-    st.dataframe(match_results)
+    # 使用Styler來美化表格
+    def color_negative_red(val):
+        if isinstance(val, str) and '↓' in val:
+            return 'color: red'
+        elif isinstance(val, str) and '↑' in val:
+            return 'color: green'
+        return ''
+    
+    styled_table = match_results.style.applymap(color_negative_red)
+    st.dataframe(styled_table)
