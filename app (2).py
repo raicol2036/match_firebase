@@ -77,31 +77,27 @@ if st.button('生成逐洞成绩及对战结果'):
             st.error(f"处理{player}的成绩时出错: {str(e)}")
             st.stop()
 
-    # ... (前面的代碼保持不變，直到顯示逐洞成績的部分)
-
-    # 創建帶有hcp的成績DataFrame
+  # 创建带有hcp的DataFrame
     try:
-        # 先創建基本成績DataFrame
+        # 先创建基本DataFrame
         scores_df = pd.DataFrame(scores_data, index=holes)
-        scores_df.columns = selected_players
         scores_df = scores_df.astype(int)
         
         # 添加hcp列
-        scores_df['球洞難度(hcp)'] = hcp
+        scores_df.insert(0, '球洞难度(hcp)', hcp)
         
-        # 重新排列列，讓hcp顯示在最前面
-        column_order = ['球洞難度(hcp)'] + selected_players
-        scores_df = scores_df[column_order]
+        # 显示成绩表（不使用Styler避免错误）
+        st.write("### 逐洞成绩（含球洞难度指数）：")
+        
+        # 创建副本用于显示，避免修改原始数据
+        display_df = scores_df.copy()
+        display_df.index.name = '球洞'
+        
+        # 格式化显示
+        st.dataframe(display_df.style.format("{:.0f}"))
         
     except Exception as e:
-        st.error(f"創建成績表時出錯: {str(e)}")
+        st.error(f"创建成绩表时出错: {str(e)}")
         st.stop()
-
-    st.write("### 逐洞成績（含球洞難度指數）：")
-    st.dataframe(scores_df.style.set_properties(**{'text-align': 'center'}))
-
-# ... (後面的代碼保持不變)
-    st.write("### 逐洞成绩：")
-    st.dataframe(scores_df)
 
     
