@@ -77,27 +77,125 @@ if st.button('生成逐洞成绩及对战结果'):
             st.error(f"处理{player}的成绩时出错: {str(e)}")
             st.stop()
 
-  # 创建带有hcp的DataFrame
+    # 创建基本DataFrame
     try:
-        # 先创建基本DataFrame
         scores_df = pd.DataFrame(scores_data, index=holes)
         scores_df = scores_df.astype(int)
-        
-        # 添加hcp列
-        scores_df.insert(0, '球洞难度(hcp)', hcp)
-        
-        # 显示成绩表（不使用Styler避免错误）
-        st.write("### 逐洞成绩（含球洞难度指数）：")
-        
-        # 创建副本用于显示，避免修改原始数据
-        display_df = scores_df.copy()
-        display_df.index.name = '球洞'
-        
-        # 格式化显示
-        st.dataframe(display_df.style.format("{:.0f}"))
-        
     except Exception as e:
         st.error(f"创建成绩表时出错: {str(e)}")
         st.stop()
 
+    # 添加hcp列
+    scores_df.insert(0, '球洞难度(hcp)', hcp)
     
+    # 显示成绩表
+    st.write("### 逐洞成绩（含球洞难度指数）：")
+    display_df = scores_df.copy()
+    display_df.index.name = '球洞'
+    st.dataframe(display_df)
+
+    # 初始化结果跟踪
+    total_earnings = {p: 0 for p in selected_players}
+    result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
+    head_to_head = defaultdict(lambda: defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0}))
+    hole_by_hole_results = []
+
+    # 计算逐洞结果（含让杆逻辑）
+    for hole_idx, hole in enumerate(holes):
+        hole_hcp = hcp[hole_idx]
+        hole_results = {"球洞": hole, "难度": hole_hcp}
+        
+        # 获取原始成绩
+        raw_scores = scores_df.loc[hole][selected_players].to_dict()
+        
+        # 计算让杆后的成绩
+        adjusted_scores = {}
+        for player in selected_players:
+            # 基本调整成绩 = 原始成绩 - 球员差点
+            adjusted_score = raw_scores[player] - handicaps[player]
+            
+            # 让杆调整：差点低的让杆给差点高的
+            for other in selected_players:
+                if player != other:
+                    hdcp_diff = handicaps[player] - handicaps[other]
+                    # 如果当前球员差点较低，且此洞难度在让杆范围内
+                    if hdcp_diff < 0 and 1 <= hole_hcp <= abs(hdcp_diff):
+                        adjusted_score += 1  # 让一杆
+            
+            adjusted_scores[player] = adjusted_score
+            hole_results[f"{player}(调整后)"] = adjusted_score
+        
+        # 找出最低成绩和赢家
+        min_score = min(adjusted_scores.values())
+        winners = [p for p, s in adjusted_scores.items() if s == min_score]
+
+        # 记录洞结果
+        if len(winners) == 1:
+            winner = winners[0]
+            hole_results["结果"] = f"{winner} 胜"
+            
+            # 更新统计
+            total_earnings[winner] += sum(bets.values())
+            result_tracker[winner]["win"] += 1
+            
+            for player in selected_players:
+                if player != winner:
+                    total_earnings[player] -= bets[player]
+                    result_tracker[player]["lose"] += 1
+                    head_to_head[winner][player]["win"] += 1
+                    head_to_head[player][winner]["lose"] += 1
+        else:
+            hole_results["结果"] = "平局"
+            for player in winners:
+                result_tracker[player]["tie"] += 1
+                for other in winners:
+                    if player != other:
+                        head_to_head[player][other]["tie"] += 1
+        
+        hole_by_hole_results.append(hole_results)
+
+    # 显示逐洞详细结果
+    st.write("### 逐洞详细结果（含让杆调整）：")
+    hole_results_df = pd.DataFrame(hole_by_hole_results)
+    st.dataframe(hole_results_df.set_index('球洞'))
+
+    # 显示总结结果
+    st.markdown("### 📊 总结结果（含胜负平统计）")
+    summary_data = []
+    for p in selected_players:
+        summary_data.append({
+            "球员": p,
+            "总赌金结算": total_earnings[p],
+            "胜": result_tracker[p]["win"],
+            "负": result_tracker[p]["lose"],
+            "平": result_tracker[p]["tie"]
+        })
+    st.dataframe(pd.DataFrame(summary_data))
+
+    # 显示队员对战结果
+    st.markdown("### 🆚 队员对战结果")
+    match_results = pd.DataFrame(index=selected_players, columns=selected_players)
+    
+    for p1 in selected_players:
+        for p2 in selected_players:
+            if p1 == p2:
+                match_results.loc[p1, p2] = "-"
+            else:
+                res = head_to_head[p1][p2]
+                net = res["win"] - res["lose"]
+                money = total_earnings[p1] - total_earnings[p2]
+                if net > 0:
+                    match_results.loc[p1, p2] = f"{net}↑ ${money}"
+                elif net < 0:
+                    match_results.loc[p1, p2] = f"{abs(net)}↓ ${money}"
+                else:
+                    match_results.loc[p1, p2] = f"平 ${money}"
+    
+    # 简单的颜色设置
+    def color_results(val):
+        if isinstance(val, str):
+            if '↑' in val: return 'color: green'
+            if '↓' in val: return 'color: red'
+        return ''
+    
+    st.dataframe(match_results.style.applymap(color_results))
