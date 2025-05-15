@@ -84,17 +84,40 @@ if st.button('生成逐洞成績及對戰結果'):
     result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
     head_to_head = defaultdict(lambda: defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0}))
 
+    # ... (前面的代碼保持不變，直到計算逐洞結果的部分)
+
     # 🎯 計算逐洞結果
-    for hole in holes:
-        # 取得該洞的成績
+    for hole_idx, hole in enumerate(holes):
+        # 取得該洞的原始成績
         scores = scores_df.loc[hole]
         
-        # 計算讓桿後的成績
-        adjusted_scores = {player: score - handicaps[player] for player, score in scores.items()}
+        # 取得該洞的難度指數 (hcp)
+        hole_hcp = hcp[hole_idx]
+        
+        # 計算調整後的成績
+        adjusted_scores = {}
+        for player in selected_players:
+        # 初始調整成績 = 原始成績 - 球員差點
+            adjusted_score = scores[player] - handicaps[player]
+            
+        # 檢查是否需要讓桿
+            for other_player in selected_players:
+                if player != other_player:
+        # 計算差點差
+                    hdcp_diff = handicaps[player] - handicaps[other_player]
+                    
+        # 如果當前球員差點較低，且此洞難度在讓桿範圍內
+                    if hdcp_diff < 0 and 1 <= hole_hcp <= abs(hdcp_diff):
+                        # 當前球員需要讓桿給其他球員 (增加一桿)
+                        adjusted_score += 1
+            
+            adjusted_scores[player] = adjusted_score
         
         # 找出最低成績
         min_score = min(adjusted_scores.values())
         winners = [p for p, s in adjusted_scores.items() if s == min_score]
+
+        # ... (後面的勝負計算和結果顯示保持不變)
 
         if len(winners) == 1:
             # 單一贏家
