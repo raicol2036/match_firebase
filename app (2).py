@@ -164,48 +164,50 @@ else:
 # 添加結果到結果列表
 hole_by_hole_results.append(hole_results)
 
-    # 显示逐洞详细结果
-    st.write("### 逐洞详细结果（含让杆调整）：")
-    hole_results_df = pd.DataFrame(hole_by_hole_results)
-    st.dataframe(hole_results_df.set_index('球洞'))
+# 显示逐洞详细结果
+st.write("### 逐洞详细结果（含让杆调整）：")
+hole_results_df = pd.DataFrame(hole_by_hole_results)
+st.dataframe(hole_results_df.set_index('球洞'))
 
-    # 显示总结结果
-    st.markdown("### 📊 总结结果（含胜负平统计）")
-    summary_data = []
-    for p in selected_players:
-        summary_data.append({
-            "球员": p,
-            "总赌金结算": total_earnings[p],
-            "胜": result_tracker[p]["win"],
-            "负": result_tracker[p]["lose"],
-            "平": result_tracker[p]["tie"]
-        })
-    st.dataframe(pd.DataFrame(summary_data))
+# 显示总结结果
+st.markdown("### 📊 总结结果（含胜负平统计）")
+summary_data = []
+for p in selected_players:
+    summary_data.append({
+        "球员": p,
+        "总赌金结算": total_earnings[p],
+        "胜": result_tracker[p]["win"],
+        "负": result_tracker[p]["lose"],
+        "平": result_tracker[p]["tie"]
+    })
+st.dataframe(pd.DataFrame(summary_data))
 
-    # 显示队员对战结果
-    st.markdown("### 🆚 队员对战结果")
-    match_results = pd.DataFrame(index=selected_players, columns=selected_players)
-    
-    for p1 in selected_players:
-        for p2 in selected_players:
-            if p1 == p2:
-                match_results.loc[p1, p2] = "-"
+# 显示队员对战结果
+st.markdown("### 🆚 队员对战结果")
+match_results = pd.DataFrame(index=selected_players, columns=selected_players)
+
+for p1 in selected_players:
+    for p2 in selected_players:
+        if p1 == p2:
+            match_results.loc[p1, p2] = "-"
+        else:
+            res = head_to_head[p1][p2]
+            net = res["win"] - res["lose"]
+            money = total_earnings[p1] - total_earnings[p2]
+            if net > 0:
+                match_results.loc[p1, p2] = f"{net}↑ ${money}"
+            elif net < 0:
+                match_results.loc[p1, p2] = f"{abs(net)}↓ ${money}"
             else:
-                res = head_to_head[p1][p2]
-                net = res["win"] - res["lose"]
-                money = total_earnings[p1] - total_earnings[p2]
-                if net > 0:
-                    match_results.loc[p1, p2] = f"{net}↑ ${money}"
-                elif net < 0:
-                    match_results.loc[p1, p2] = f"{abs(net)}↓ ${money}"
-                else:
-                    match_results.loc[p1, p2] = f"平 ${money}"
-    
-    # 简单的颜色设置
-    def color_results(val):
-        if isinstance(val, str):
-            if '↑' in val: return 'color: green'
-            if '↓' in val: return 'color: red'
-        return ''
-    
-    st.dataframe(match_results.style.applymap(color_results))
+                match_results.loc[p1, p2] = f"平 ${money}"
+
+# 简单的颜色设置
+def color_results(val):
+    if isinstance(val, str):
+        if '↑' in val:
+            return 'color: green'
+        if '↓' in val:
+            return 'color: red'
+    return ''
+
+st.dataframe(match_results.style.applymap(color_results))
