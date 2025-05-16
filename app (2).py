@@ -130,17 +130,17 @@ for player in selected_players:
     player_scores_for_comparison[player] = score
 
 # 找出最小分數，即勝利者（讓桿後）
-min_score = min(player_scores_for_comparison.values())
-winners = [p for p, s in player_scores_for_comparison.items() if s == min_score]
+    min_score = min(player_scores_for_comparison.values())
+    winners = [p for p, s in player_scores_for_comparison.items() if s == min_score]
 
         # 记录洞结果
     if len(winners) == 1:
-            winner = winners[0]
-            hole_results["结果"] = f"{winner} 胜"
+        winner = winners[0]
+        hole_results["结果"] = f"{winner} 胜"
             
             # 更新统计
-            total_earnings[winner] += sum(bets.values())
-            result_tracker[winner]["win"] += 1
+        total_earnings[winner] += sum(bets.values())
+        result_tracker[winner]["win"] += 1
             
             for player in selected_players:
                 if player != winner:
