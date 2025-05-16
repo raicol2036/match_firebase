@@ -134,29 +134,35 @@ for player in selected_players:
     winners = [p for p, s in player_scores_for_comparison.items() if s == min_score]
 
         # 记录洞结果
-    if len(winners) == 1:
-        winner = winners[0]
-        hole_results["结果"] = f"{winner} 胜"
-            
-            # 更新统计
-        total_earnings[winner] += sum(bets.values())
-        result_tracker[winner]["win"] += 1
-            
-            for player in selected_players:
-                if player != winner:
-                    total_earnings[player] -= bets[player]
-                    result_tracker[player]["lose"] += 1
-                    head_to_head[winner][player]["win"] += 1
-                    head_to_head[player][winner]["lose"] += 1
-        else:
-            hole_results["结果"] = "平局"
-            for player in winners:
-                result_tracker[player]["tie"] += 1
-                for other in winners:
-                    if player != other:
-                        head_to_head[player][other]["tie"] += 1
-        
-        hole_by_hole_results.append(hole_results)
+# 找出最小分數，即勝利者（讓桿後）
+min_score = min(player_scores_for_comparison.values())
+winners = [p for p, s in player_scores_for_comparison.items() if s == min_score]
+
+# 记录洞结果
+if len(winners) == 1:
+    winner = winners[0]
+    hole_results["结果"] = f"{winner} 胜"
+    
+    # 更新统计
+    total_earnings[winner] += sum(bets.values())
+    result_tracker[winner]["win"] += 1
+    
+    for player in selected_players:
+        if player != winner:
+            total_earnings[player] -= bets[player]
+            result_tracker[player]["lose"] += 1
+            head_to_head[winner][player]["win"] += 1
+            head_to_head[player][winner]["lose"] += 1
+else:
+    hole_results["结果"] = "平局"
+    for player in winners:
+        result_tracker[player]["tie"] += 1
+        for other in winners:
+            if player != other:
+                head_to_head[player][other]["tie"] += 1
+
+# 添加結果到結果列表
+hole_by_hole_results.append(hole_results)
 
     # 显示逐洞详细结果
     st.write("### 逐洞详细结果（含让杆调整）：")
