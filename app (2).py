@@ -106,7 +106,7 @@ if st.button('生成逐洞成绩及对战结果'):
         hole_results = {"球洞": hole, "难度": hole_hcp}
         
        # 不在此處調整成績，直接用 raw_scores
-raw_scores = scores_df.loc[hole][selected_players].to_dict()
+    raw_scores = scores_df.loc[hole][selected_players].to_dict()
 
 # 設置讓桿的玩家和洞
 player_scores_for_comparison = {}
