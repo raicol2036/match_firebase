@@ -131,7 +131,7 @@ if not numeric_values:
     st.error("所有分數都不是數字！請檢查賦值流程。")
     st.stop()
 
-min_score = min(numeric_values)
+    min_score = min(numeric_values)
 for player in selected_players:
     # 確定是否該玩家的洞該讓桿
     is_handed = False
