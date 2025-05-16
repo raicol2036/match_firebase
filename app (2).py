@@ -108,9 +108,30 @@ if st.button('生成逐洞成绩及对战结果'):
        # 不在此處調整成績，直接用 raw_scores
     raw_scores = scores_df.loc[hole][selected_players].to_dict()
 
-# 設置讓桿的玩家和洞
 player_scores_for_comparison = {}
 
+for player in selected_players:
+    score = raw_scores[player]
+    # 確認類型
+    if not isinstance(score, (int, float)):
+        st.error(f"{player} 分數不為數字，類型：{type(score)}，值：{score}")
+        st.stop()
+
+    if is_handed:
+        score += 1
+    
+    # 確認在存入前
+    st.write(f"{player} 最終計分：{score}")
+    player_scores_for_comparison[player] = score
+
+# 找出最小分數前，篩選
+values = list(player_scores_for_comparison.values())
+numeric_values = [v for v in values if isinstance(v, (int, float))]
+if not numeric_values:
+    st.error("所有分數都不是數字！請檢查賦值流程。")
+    st.stop()
+
+min_score = min(numeric_values)
 for player in selected_players:
     # 確定是否該玩家的洞該讓桿
     is_handed = False
