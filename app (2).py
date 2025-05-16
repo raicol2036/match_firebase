@@ -134,7 +134,7 @@ min_score = min(player_scores_for_comparison.values())
 winners = [p for p, s in player_scores_for_comparison.items() if s == min_score]
 
         # 记录洞结果
-        if len(winners) == 1:
+    if len(winners) == 1:
             winner = winners[0]
             hole_results["结果"] = f"{winner} 胜"
             
