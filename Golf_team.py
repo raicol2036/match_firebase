@@ -177,5 +177,6 @@ if st.button("開始計算"):
             data=excel_buffer.getvalue(),
             file_name="leaderboard.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
     else:
         st.info("📥 請先上傳 players.csv 與 course.csv")
