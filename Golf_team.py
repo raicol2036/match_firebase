@@ -228,15 +228,15 @@ if st.button("開始計算"):
     # === Leaderboard ===
     st.subheader("📊 Leaderboard 排名表")
 
-    # 把原始差點抓出來
+    # 取出原始差點 (不被修改)
     player_hcps = {p: int(players.loc[players["name"] == p, "handicap"].values[0]) for p in winners["gross"].keys()}
 
-    # 計算差點更新 (冠軍 -2、亞軍 -1，其餘 0)
-    hcp_updates = {p: 0 for p in winners["gross"].keys()}
+    # 計算差點更新
+    hcp_new = {p: player_hcps[p] for p in winners["gross"].keys()}
     if winners["net_champion"]:
-        hcp_updates[winners["net_champion"]] = -2
+        hcp_new[winners["net_champion"]] = player_hcps[winners["net_champion"]] - 2
     if winners["net_runnerup"]:
-        hcp_updates[winners["net_runnerup"]] = -1
+        hcp_new[winners["net_runnerup"]] = player_hcps[winners["net_runnerup"]] - 1
 
     # 建立 DataFrame
     df_leader = pd.DataFrame({
@@ -246,8 +246,9 @@ if st.button("開始計算"):
         "淨桿": [winners["net"][p] for p in winners["gross"].keys()],
         "總桿排名": pd.Series(winners["gross"]).rank(method="min").astype(int).values,
         "淨桿排名": pd.Series(winners["net"]).rank(method="min").astype(int).values,
-        "差點更新": [hcp_updates[p] for p in winners["gross"].keys()]
+        "差點更新": [hcp_new[p] for p in winners["gross"].keys()]
     })
+
 
     # 顯示
     st.dataframe(df_leader.sort_values("淨桿排名"))
