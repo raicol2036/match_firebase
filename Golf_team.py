@@ -124,7 +124,6 @@ if player_file and course_file:
         "birdies": birdies
     }
 
-
     # === 開始計算 ===
     if st.button("開始計算"):
         winners = get_winners(scores)
