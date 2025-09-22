@@ -23,7 +23,7 @@ st.header("1. 設定比賽人數")
 num_players = st.number_input("請輸入參賽人數 (1~24)", min_value=1, max_value=24, value=4, step=1)
 
 # === 選擇球員並輸入成績 ===
-st.header("2. 輸入比賽成績 (必須18位數字，限制無法輸入第19碼)")
+st.header("2. 輸入比賽成績 (連續輸入18位數字)")
 scores = {}
 selected_players = []
 
