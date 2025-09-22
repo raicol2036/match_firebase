@@ -126,45 +126,46 @@ if player_file and course_file:
 
     # === 開始計算 ===
         if st.button("開始計算"):
-        winners = get_winners(scores)
-
-        st.subheader("🏆 比賽結果")
-        st.write(f"總桿冠軍: {winners['gross_champion']}")
-        st.write(f"總桿亞軍: {winners['gross_runnerup']}")
-        st.write(f"淨桿冠軍: {winners['net_champion']}")
-        st.write(f"淨桿亞軍: {winners['net_runnerup']}")
-
-        if winners["birdies"]:
-            st.write("✨ Birdie 紀錄：")
-            for player, hole in winners["birdies"]:
-                st.write(f"- {player} 在第 {hole} 洞")
+            if not selected_players:
+                st.warning("⚠️ 請先選擇球員並輸入成績")
         else:
-            st.write("無 Birdie 紀錄")
+            winners = get_winners(scores)
+
+            st.subheader("🏆 比賽結果")
+            st.write(f"總桿冠軍: {winners['gross_champion']}")
+            st.write(f"總桿亞軍: {winners['gross_runnerup']}")
+            st.write(f"淨桿冠軍: {winners['net_champion']}")
+            st.write(f"淨桿亞軍: {winners['net_runnerup']}")
+
+            if winners["birdies"]:
+                st.write("✨ Birdie 紀錄：")
+                for player, hole in winners["birdies"]:
+                    st.write(f"- {player} 在第 {hole} 洞")
+            else:
+                st.write("無 Birdie 紀錄")
 
         # Leaderboard
-        st.subheader("📊 Leaderboard 排名表")
-        df_leader = pd.DataFrame({
-            "球員": list(winners["gross"].keys()),
-            "總桿": list(winners["gross"].values()),
-            "淨桿": [winners["net"][p] for p in winners["gross"].keys()]
-        })
-        df_leader["總桿排名"] = df_leader["總桿"].rank(method="min").astype(int)
-        df_leader["淨桿排名"] = df_leader["淨桿"].rank(method="min").astype(int)
-        st.dataframe(df_leader.sort_values("淨桿排名"))
+            st.subheader("📊 Leaderboard 排名表")
+            df_leader = pd.DataFrame({
+                "球員": list(winners["gross"].keys()),
+                "總桿": list(winners["gross"].values()),
+                "淨桿": [winners["net"][p] for p in winners["gross"].keys()]
+            })
+            df_leader["總桿排名"] = df_leader["總桿"].rank(method="min").astype(int)
+            df_leader["淨桿排名"] = df_leader["淨桿"].rank(method="min").astype(int)
+            st.dataframe(df_leader.sort_values("淨桿排名"))
 
         # 匯出功能
-        st.subheader("💾 匯出比賽結果")
-        csv_buffer = io.StringIO()
-        df_leader.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
-        st.download_button("📥 下載 CSV", data=csv_buffer.getvalue(),
-                           file_name="leaderboard.csv", mime="text/csv")
+            st.subheader("💾 匯出比賽結果")
+            csv_buffer = io.StringIO()
+            df_leader.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+            st.download_button("📥 下載 CSV", data=csv_buffer.getvalue(),
+                               file_name="leaderboard.csv", mime="text/csv")
 
-        excel_buffer = io.BytesIO()
-        with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
-            df_leader.to_excel(writer, sheet_name="Leaderboard", index=False)
-        st.download_button("📥 下載 Excel", data=excel_buffer.getvalue(),
-                           file_name="leaderboard.xlsx",
-                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-else:
-    st.info("📥 請先上傳 players.csv 與 course.csv")
+            excel_buffer = io.BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+                df_leader.to_excel(writer, sheet_name="Leaderboard", index=False)
+            st.download_button("📥 下載 Excel", data=excel_buffer.getvalue(),
+                               file_name="leaderboard.xlsx",
+                               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
