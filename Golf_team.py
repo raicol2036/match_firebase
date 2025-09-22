@@ -142,14 +142,23 @@ if not allow_repeat:
 else:
     # 模式 2：18 個下拉選單 (可重複)
     n_near_awards = []
-    for i in range(1, 19):
-        n_near_player = st.selectbox(
-            f"N近洞獎 - 第{i}次",
-            ["無"] + list(players["name"].values),
-            key=f"n_near_{i}"
-        )
-        if n_near_player != "無":
-            n_near_awards.append(n_near_player)
+    num_slots = 18  # 最多18次
+    cols_per_row = 4  # 每行顯示4個
+
+    for i in range(0, num_slots, cols_per_row):
+        cols = st.columns(cols_per_row)
+        for j in range(cols_per_row):
+            idx = i + j + 1
+            if idx > num_slots:
+                break
+            with cols[j]:
+                n_near_player = st.selectbox(
+                    f"第{idx}次",
+                    ["無"] + list(players["name"].values),
+                    key=f"n_near_{idx}"
+                )
+                if n_near_player != "無":
+                    n_near_awards.append(n_near_player)
 
 # 整合獎項
 awards = {
