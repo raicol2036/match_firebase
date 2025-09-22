@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.title("🏌️ 球隊成績管理系統")
+st.title("🏌️ 球隊成績管理系統 (快速輸入版)")
 
 # === 安全讀取 CSV ===
 def read_csv_safe(file):
@@ -16,27 +16,16 @@ def read_csv_safe(file):
     st.error("❌ 無法讀取檔案，請確認格式與編碼")
     return pd.DataFrame()
 
-# === 初始化 session_state ===
-if "players" not in st.session_state:
-    st.session_state["players"] = None
-if "courses" not in st.session_state:
-    st.session_state["courses"] = None
-
 # === 上傳 CSV ===
 st.header("1. 上傳資料檔案")
 player_file = st.file_uploader("📂 上傳球員資料 (players.csv)", type=["csv"])
 course_file = st.file_uploader("📂 上傳球場資料 (course.csv)", type=["csv"])
 
-if player_file is not None:
-    st.session_state["players"] = read_csv_safe(player_file)
-if course_file is not None:
-    st.session_state["courses"] = read_csv_safe(course_file)
+if player_file and course_file:
+    players = read_csv_safe(player_file)
+    courses = read_csv_safe(course_file)
 
-players = st.session_state["players"]
-courses = st.session_state["courses"]
-
-if players is not None and courses is not None:
-    # === 驗證欄位 ===
+    # 驗證欄位
     if not set(["name","handicap","champion","runnerup"]).issubset(players.columns):
         st.error("❌ players.csv 欄位必須包含: name, handicap, champion, runnerup")
         st.stop()
@@ -44,32 +33,31 @@ if players is not None and courses is not None:
         st.error("❌ course.csv 欄位必須包含: course_name, area, hole, hcp, par")
         st.stop()
 
-    st.success("✅ 檔案載入成功！(已暫存，不需再次上傳)")
+    st.success("✅ 檔案載入成功！")
 
-    # === 2. 選擇球員 ===
-    st.header("2. 選擇參賽球員")
-    player_options = list(players["name"].values)
-    selected_players = st.multiselect("選擇球員 (最多24名)", player_options, max_selections=24)
+    # === 設定比賽人數 ===
+    st.header("2. 設定比賽人數")
+    num_players = st.number_input("請輸入參賽人數 (1~24)", min_value=1, max_value=24, value=4, step=1)
 
-    # === 3. 輸入成績 ===
-    st.header("3. 輸入成績 (最多18洞)")
+    # === 選擇球員並輸入成績 ===
+    st.header("3. 輸入比賽成績 (18位數字，依序代表1~18洞桿數)")
     scores = {}
-    if selected_players:
-        for p in selected_players:
-            scores[p] = []
-            st.subheader(f"球員：{p}")
-            cols = st.columns(9)
-            for i in range(9):
-                val = cols[i].number_input(f"H{i+1}", min_value=1, max_value=15, step=1, key=f"{p}_f{i+1}")
-                scores[p].append(val)
-            cols2 = st.columns(9)
-            for i in range(9):
-                val = cols2[i].number_input(f"H{i+10}", min_value=1, max_value=15, step=1, key=f"{p}_b{i+10}")
-                scores[p].append(val)
+    selected_players = []
 
-    # === 4. 計算結果 ===
+    for i in range(num_players):
+        st.subheader(f"球員 {i+1}")
+        player_name = st.selectbox(f"選擇球員 {i+1}", players["name"].values, key=f"player_{i}")
+        selected_players.append(player_name)
+
+        score_str = st.text_input(f"{player_name} 的成績 (18位數字)", key=f"scores_{i}")
+        if score_str and score_str.isdigit() and len(score_str) == 18:
+            scores[player_name] = [int(x) for x in score_str]
+        else:
+            scores[player_name] = []
+
+    # === 計算函式 ===
     def calculate_gross(scores):
-        return {p: sum(s) for p, s in scores.items()}
+        return {p: sum(s) for p, s in scores.items() if s}
 
     def calculate_net(gross_scores):
         net_scores = {}
@@ -121,50 +109,47 @@ if players is not None and courses is not None:
             "birdies": birdies
         }
 
-    # === 5. 計算按鈕 ===
+    # === 開始計算 ===
     if st.button("開始計算"):
-        if not selected_players:
-            st.warning("⚠️ 請先選擇球員並輸入成績")
+        winners = get_winners(scores)
+
+        st.subheader("🏆 比賽結果")
+        st.write(f"總桿冠軍: {winners['gross_champion']}")
+        st.write(f"總桿亞軍: {winners['gross_runnerup']}")
+        st.write(f"淨桿冠軍: {winners['net_champion']}")
+        st.write(f"淨桿亞軍: {winners['net_runnerup']}")
+
+        if winners["birdies"]:
+            st.write("✨ Birdie 紀錄：")
+            for player, hole in winners["birdies"]:
+                st.write(f"- {player} 在第 {hole} 洞")
         else:
-            winners = get_winners(scores)
+            st.write("無 Birdie 紀錄")
 
-            st.subheader("🏆 比賽結果")
-            st.write(f"總桿冠軍: {winners['gross_champion']}")
-            st.write(f"總桿亞軍: {winners['gross_runnerup']}")
-            st.write(f"淨桿冠軍: {winners['net_champion']}")
-            st.write(f"淨桿亞軍: {winners['net_runnerup']}")
+        # Leaderboard
+        st.subheader("📊 Leaderboard 排名表")
+        df_leader = pd.DataFrame({
+            "球員": list(winners["gross"].keys()),
+            "總桿": list(winners["gross"].values()),
+            "淨桿": [winners["net"][p] for p in winners["gross"].keys()]
+        })
+        df_leader["總桿排名"] = df_leader["總桿"].rank(method="min").astype(int)
+        df_leader["淨桿排名"] = df_leader["淨桿"].rank(method="min").astype(int)
+        st.dataframe(df_leader.sort_values("淨桿排名"))
 
-            if winners["birdies"]:
-                st.write("✨ Birdie 紀錄：")
-                for player, hole in winners["birdies"]:
-                    st.write(f"- {player} 在第 {hole} 洞")
-            else:
-                st.write("無 Birdie 紀錄")
+        # 匯出功能
+        st.subheader("💾 匯出比賽結果")
+        csv_buffer = io.StringIO()
+        df_leader.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+        st.download_button("📥 下載 CSV", data=csv_buffer.getvalue(),
+                           file_name="leaderboard.csv", mime="text/csv")
 
-            # Leaderboard
-            st.subheader("📊 Leaderboard 排名表")
-            df_leader = pd.DataFrame({
-                "球員": list(winners["gross"].keys()),
-                "總桿": list(winners["gross"].values()),
-                "淨桿": [winners["net"][p] for p in winners["gross"].keys()]
-            })
-            df_leader["總桿排名"] = df_leader["總桿"].rank(method="min").astype(int)
-            df_leader["淨桿排名"] = df_leader["淨桿"].rank(method="min").astype(int)
-            st.dataframe(df_leader.sort_values("淨桿排名"))
-
-            # 匯出功能
-            st.subheader("💾 匯出比賽結果")
-            csv_buffer = io.StringIO()
-            df_leader.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
-            st.download_button("📥 下載 CSV", data=csv_buffer.getvalue(),
-                               file_name="leaderboard.csv", mime="text/csv")
-
-            excel_buffer = io.BytesIO()
-            with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
-                df_leader.to_excel(writer, sheet_name="Leaderboard", index=False)
-            st.download_button("📥 下載 Excel", data=excel_buffer.getvalue(),
-                               file_name="leaderboard.xlsx",
-                               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+            df_leader.to_excel(writer, sheet_name="Leaderboard", index=False)
+        st.download_button("📥 下載 Excel", data=excel_buffer.getvalue(),
+                           file_name="leaderboard.xlsx",
+                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 else:
     st.info("📥 請先上傳 players.csv 與 course.csv")
+
