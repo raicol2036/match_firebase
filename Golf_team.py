@@ -226,32 +226,31 @@ if st.button("開始計算"):
     st.markdown(" ｜ ".join(award_texts))
 
     # === Leaderboard ===
-    # === Leaderboard ===
-st.subheader("📊 Leaderboard 排名表")
+    st.subheader("📊 Leaderboard 排名表")
 
-# 把原始差點抓出來
-player_hcps = {p: int(players.loc[players["name"] == p, "handicap"].values[0]) for p in winners["gross"].keys()}
+    # 把原始差點抓出來
+    player_hcps = {p: int(players.loc[players["name"] == p, "handicap"].values[0]) for p in winners["gross"].keys()}
 
-# 計算差點更新 (冠軍 -2、亞軍 -1，其餘 0)
-hcp_updates = {p: 0 for p in winners["gross"].keys()}
-if winners["net_champion"]:
-    hcp_updates[winners["net_champion"]] = -2
-if winners["net_runnerup"]:
-    hcp_updates[winners["net_runnerup"]] = -1
+    # 計算差點更新 (冠軍 -2、亞軍 -1，其餘 0)
+    hcp_updates = {p: 0 for p in winners["gross"].keys()}
+    if winners["net_champion"]:
+        hcp_updates[winners["net_champion"]] = -2
+    if winners["net_runnerup"]:
+        hcp_updates[winners["net_runnerup"]] = -1
 
-# 建立 DataFrame
-df_leader = pd.DataFrame({
-    "球員": list(winners["gross"].keys()),
-    "原始差點": [player_hcps[p] for p in winners["gross"].keys()],
-    "總桿": list(winners["gross"].values()),
-    "淨桿": [winners["net"][p] for p in winners["gross"].keys()],
-    "總桿排名": pd.Series(winners["gross"]).rank(method="min").astype(int).values,
-    "淨桿排名": pd.Series(winners["net"]).rank(method="min").astype(int).values,
-    "差點更新": [hcp_updates[p] for p in winners["gross"].keys()]
-})
+    # 建立 DataFrame
+    df_leader = pd.DataFrame({
+        "球員": list(winners["gross"].keys()),
+        "原始差點": [player_hcps[p] for p in winners["gross"].keys()],
+        "總桿": list(winners["gross"].values()),
+        "淨桿": [winners["net"][p] for p in winners["gross"].keys()],
+        "總桿排名": pd.Series(winners["gross"]).rank(method="min").astype(int).values,
+        "淨桿排名": pd.Series(winners["net"]).rank(method="min").astype(int).values,
+        "差點更新": [hcp_updates[p] for p in winners["gross"].keys()]
+    })
 
-# 顯示
-st.dataframe(df_leader.sort_values("淨桿排名"))
+    # 顯示
+    st.dataframe(df_leader.sort_values("淨桿排名"))
 
     # === 匯出功能 ===
     st.subheader("💾 匯出比賽結果")
