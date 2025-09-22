@@ -1,125 +1,139 @@
-# 匯出 canvas 的內容為 Python 檔案
-with open('/mnt/data/Golf_Match_Play_Streamlit.py', 'w') as file:
-    file.write("""import streamlit as st
+import streamlit as st
 import pandas as pd
-from collections import defaultdict
+import io
 
-# 初始化頁面設定
-st.set_page_config(page_title='⛳ 高爾夫比洞賽模擬器', layout='wide')
-st.title('⛳ 高爾夫比洞賽模擬器')
+# 載入資料
+players = pd.read_csv("players.csv")
+courses = pd.read_csv("course.csv")
 
-# 初始化結果跟踪器
-result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
+st.title("🏌️ 球隊成績管理系統")
 
-# 1. 選擇球場
-st.subheader('1. 選擇球場')
-course_df = pd.read_csv('course_db.csv')
-course_names = course_df['course_name'].unique()
-selected_course = st.selectbox("選擇球場", course_names)
-course_info = course_df[course_df['course_name'] == selected_course]
-areas = course_info['area'].unique().tolist()
+# 選擇參賽球員
+st.header("1. 選擇參賽球員")
+player_options = list(players["name"].values)
+selected_players = st.multiselect("選擇球員 (最多24名)", player_options, max_selections=24)
 
-st.subheader('前九洞區域選擇')
-front_area = st.selectbox('前九洞區域', areas, key='front_area')
-st.subheader('後九洞區域選擇')
-back_area = st.selectbox('後九洞區域', areas, key='back_area')
+# 建立成績輸入區
+st.header("2. 輸入成績 (最多18洞)")
+scores = {}
+if selected_players:
+    for p in selected_players:
+        scores[p] = []
+        st.subheader(f"球員：{p}")
+        cols = st.columns(9)  # 前九
+        for i in range(9):
+            val = cols[i].number_input(f"H{i+1}", min_value=1, max_value=15, step=1, key=f"{p}_f{i+1}")
+            scores[p].append(val)
+        cols2 = st.columns(9)  # 後九
+        for i in range(9):
+            val = cols2[i].number_input(f"H{i+10}", min_value=1, max_value=15, step=1, key=f"{p}_b{i+10}")
+            scores[p].append(val)
 
-# 讀取前後九洞資料
-front_info = course_info[course_info['area'] == front_area]
-back_info = course_info[course_info['area'] == back_area]
+# 計算邏輯
+def calculate_gross(scores):
+    return {p: sum(s) for p, s in scores.items()}
 
-holes = front_info['hole'].tolist() + back_info['hole'].tolist()
-pars = front_info['par'].tolist() + back_info['par'].tolist()
-hcp = front_info['hcp'].tolist() + back_info['hcp'].tolist()
+def calculate_net(gross_scores):
+    net_scores = {}
+    for p, gross in gross_scores.items():
+        hcp = int(players.loc[players["name"] == p, "handicap"].values[0])
+        net_scores[p] = gross - hcp
+    return net_scores
 
-# 2. 輸入參賽球員
-st.subheader('2. 輸入參賽球員')
-players_df = pd.read_csv('players.csv')
-player_names = players_df['name'].tolist()
-selected_players = st.multiselect('選擇參賽球員（至少2人）', player_names)
+def find_birdies(scores):
+    birdies = []
+    for p, s in scores.items():
+        for i, score in enumerate(s):
+            if i < len(courses):  # 避免洞數不足
+                par = courses.iloc[i]["par"]
+                if score == par - 1:
+                    birdies.append((p, i+1))
+    return birdies
 
-if len(selected_players) < 2:
-    st.warning('請選擇至少兩位球員參賽。')
-    st.stop()
+def get_winners(scores):
+    gross = calculate_gross(scores)
+    net = calculate_net(gross)
 
-# 3. 輸入個人差點、賭金與快速成績
-st.subheader('3. 輸入個人差點、賭金與快速成績')
-handicaps = {}
-bets = {}
-quick_scores = {}
+    eligible_champ = {p: s for p, s in gross.items() if players.loc[players["name"]==p,"champion"].values[0] == "No"}
+    eligible_runner = {p: s for p, s in gross.items() if players.loc[players["name"]==p,"runnerup"].values[0] == "No"}
 
-for player in selected_players:
-    st.markdown(f'### {player}')
-    handicaps[player] = st.number_input(f'{player} 的差點', min_value=0, max_value=54, value=0, step=1, key=f"hdcp_{player}")
-    bets[player] = st.number_input(f'{player} 的賭金設置', min_value=0, value=100, step=10, key=f"bet_{player}")
-    quick_scores[player] = st.text_input(f'{player} 的快速成績輸入（18碼）', max_chars=18, key=f"score_{player}")
-    if len(quick_scores[player]) == 18:
-        st.success(f'✅ {player} 成績已完成輸入')
+    gross_champ = min(eligible_champ, key=eligible_champ.get, default=None)
+    gross_runner = min(eligible_runner, key=eligible_runner.get, default=None)
 
-# 檢查快速成績是否完整
-all_scores_entered = all(len(quick_scores.get(player, '')) == 18 for player in selected_players)
-if not all_scores_entered:
-    st.error("請確保所有球員的18洞成績已完整輸入")
-    st.stop()
+    net_sorted = sorted(net.items(), key=lambda x: x[1])
+    net_champ, net_runner = (None, None)
+    if len(net_sorted) > 0: net_champ = net_sorted[0][0]
+    if len(net_sorted) > 1: net_runner = net_sorted[1][0]
 
-# 初始化成績資料
-scores_data = {}
-for player in selected_players:
-    score_str = quick_scores[player].strip().replace(' ', '')
-    scores_data[player] = [int(c) for c in score_str]
+    # 更新 handicap
+    if net_champ:
+        players.loc[players["name"]==net_champ,"handicap"] -= 2
+    if net_runner:
+        players.loc[players["name"]==net_runner,"handicap"] -= 1
 
-# 建立 DataFrame
-scores_df = pd.DataFrame(scores_data, index=holes)
-scores_df.insert(0, '球洞難度(hcp)', hcp)
+    birdies = find_birdies(scores)
 
-# 顯示逐洞成績
-st.write("### 逐洞成績（含球洞難度）：")
-display_df = scores_df.copy()
-display_df.index.name = '球洞'
-st.dataframe(display_df)
+    return {
+        "gross": gross,
+        "net": net,
+        "gross_champion": gross_champ,
+        "gross_runnerup": gross_runner,
+        "net_champion": net_champ,
+        "net_runnerup": net_runner,
+        "birdies": birdies
+    }
 
-# 初始化結果統計
-total_earnings = {p: 0 for p in selected_players}
-result_tracker = defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0})
-head_to_head = defaultdict(lambda: defaultdict(lambda: {"win": 0, "lose": 0, "tie": 0}))
-hole_by_hole_results = []
-
-# 讓桿邏輯計算
-def calculate_adjusted_scores(raw_scores, handicaps, hole_hcp):
-    adjusted_scores = {}
-    for player, score in raw_scores.items():
-        total_adjustment = 0
-        for opponent, opp_score in raw_scores.items():
-            if player != opponent:
-                diff = handicaps[opponent] - handicaps[player]
-                if diff > 0 and hole_hcp <= diff:
-                    total_adjustment += 1
-        adjusted_scores[player] = score + total_adjustment
-    return adjusted_scores
-
-# 計算逐洞結果
-for hole_idx, hole in enumerate(holes):
-    hole_hcp = hcp[hole_idx]
-    hole_results = {"球洞": hole, "難度": hole_hcp}
-    raw_scores = scores_df.loc[hole][selected_players].to_dict()
-    adjusted_scores = calculate_adjusted_scores(raw_scores, handicaps, hole_hcp)
-    min_score = min(adjusted_scores.values())
-    winners = [p for p, s in adjusted_scores.items() if s == min_score]
-
-    if len(winners) == 1:
-        winner = winners[0]
-        hole_results["結果"] = f"{winner} 胜"
-        total_earnings[winner] += sum(bets.values())
-        result_tracker[winner]["win"] += 1
+# 開始計算
+if st.button("開始計算"):
+    if not selected_players:
+        st.warning("⚠️ 請先選擇球員並輸入成績")
     else:
-        hole_results["結果"] = "平局"
-        for player in winners:
-            result_tracker[player]["tie"] += 1
+        winners = get_winners(scores)
 
-    hole_by_hole_results.append(hole_results)
+        st.subheader("🏆 比賽結果")
+        st.write(f"總桿冠軍: {winners['gross_champion']}")
+        st.write(f"總桿亞軍: {winners['gross_runnerup']}")
+        st.write(f"淨桿冠軍: {winners['net_champion']}")
+        st.write(f"淨桿亞軍: {winners['net_runnerup']}")
 
-# 顯示逐洞詳細結果
-st.write("### 逐洞詳細結果（含讓桿調整）：")
-hole_results_df = pd.DataFrame(hole_by_hole_results)
-st.dataframe(hole_results_df.set_index('球洞'))
-""")
+        if winners["birdies"]:
+            st.write("✨ Birdie 紀錄：")
+            for player, hole in winners["birdies"]:
+                st.write(f"- {player} 在第 {hole} 洞")
+        else:
+            st.write("無 Birdie 紀錄")
+
+        # === Leaderboard 排名表 ===
+        st.subheader("📊 Leaderboard 排名表")
+        df_leader = pd.DataFrame({
+            "球員": list(winners["gross"].keys()),
+            "總桿": list(winners["gross"].values()),
+            "淨桿": [winners["net"][p] for p in winners["gross"].keys()]
+        })
+        df_leader["總桿排名"] = df_leader["總桿"].rank(method="min").astype(int)
+        df_leader["淨桿排名"] = df_leader["淨桿"].rank(method="min").astype(int)
+        st.dataframe(df_leader.sort_values("淨桿排名"))
+
+        # === 匯出功能 ===
+        st.subheader("💾 匯出比賽結果")
+
+        # 匯出 CSV
+        csv_buffer = io.StringIO()
+        df_leader.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+        st.download_button(
+            label="📥 下載 CSV",
+            data=csv_buffer.getvalue(),
+            file_name="leaderboard.csv",
+            mime="text/csv"
+        )
+
+        # 匯出 Excel
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+            df_leader.to_excel(writer, sheet_name="Leaderboard", index=False)
+        st.download_button(
+            label="📥 下載 Excel",
+            data=excel_buffer.getvalue(),
+            file_name="leaderboard.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
