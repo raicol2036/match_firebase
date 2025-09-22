@@ -126,15 +126,30 @@ with col1:
 with col2:
     near3 = st.multiselect("🎯 三近洞獎 (1–2人)", players["name"].values, max_selections=2, key="near3")
 
-# === N近洞獎 (可複選，允許同一球員得多次獎) ===
-st.subheader("🎯 N近洞獎 (最多18人，可複選，允許同一球員多次得獎)")
+# === N近洞獎 (雙模式) ===
+st.subheader("🎯 N近洞獎")
 
-n_near_awards = st.multiselect(
-    "選擇獲得 N近洞獎的球員",
-    players["name"].values,
-    max_selections=18,
-    key="n_near_awards"
-)
+allow_repeat = st.checkbox("允許同一球員重複得獎")
+
+if not allow_repeat:
+    # 模式 1：multiselect (簡單版，最多 18 人，無法重複)
+    n_near_awards = st.multiselect(
+        "選擇獲得 N近洞獎的球員 (最多18人，無重複)",
+        players["name"].values,
+        max_selections=18,
+        key="n_near_awards_multi"
+    )
+else:
+    # 模式 2：18 個下拉選單 (可重複)
+    n_near_awards = []
+    for i in range(1, 19):
+        n_near_player = st.selectbox(
+            f"N近洞獎 - 第{i}次",
+            ["無"] + list(players["name"].values),
+            key=f"n_near_{i}"
+        )
+        if n_near_player != "無":
+            n_near_awards.append(n_near_player)
 
 # 整合獎項
 awards = {
