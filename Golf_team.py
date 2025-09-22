@@ -3,8 +3,8 @@ import pandas as pd
 import io
 
 # 載入資料
-players = pd.read_csv("players.csv")
-courses = pd.read_csv("course.csv")
+players = pd.read_csv("players.csv", encoding="utf-8")
+courses = pd.read_csv("course.csv", encoding="utf-8")
 
 st.title("🏌️ 球隊成績管理系統")
 
