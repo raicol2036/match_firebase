@@ -6,7 +6,7 @@ st.title("🏌️ 球隊成績管理系統 (18碼固定載入版)")
 
 # === 直接載入 CSV ===
 players = pd.read_csv("players.csv", encoding="utf-8-sig")
-courses = pd.read_csv("course.csv", encoding="utf-8-sig")
+courses = pd.read_csv("course_db.csv", encoding="utf-8-sig")
 
 # 驗證欄位
 if not set(["name","handicap","champion","runnerup"]).issubset(players.columns):
