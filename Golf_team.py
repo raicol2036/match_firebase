@@ -144,6 +144,9 @@ awards = {
 }
 
 # === 開始計算 ===
+if st.button("開始計算"):
+    winners = get_winners(scores)
+
     st.subheader("🏆 比賽結果")
     st.write(f"總桿冠軍: {winners['gross_champion']}")
     st.write(f"總桿亞軍: {winners['gross_runnerup']}")
@@ -156,22 +159,20 @@ awards = {
             st.write(f"- {player} 在第 {hole} 洞")
     else:
         st.write("無 Birdie 紀錄")
-    if st.button("開始計算"):
-       st.subheader("🏅 特殊獎項結果")
 
-       award_texts = []
-       for award_name, winners_list in awards.items():
-           if winners_list:
-               award_texts.append(f"**{award_name}** {', '.join(winners_list)}")
-       else:
-           award_texts.append(f"**{award_name}** 無")
+    # === 特殊獎項結果 ===
+    st.subheader("🏅 特殊獎項結果")
+    award_texts = []
+    for award_name, winners_list in awards.items():
+        if winners_list:
+            award_texts.append(f"**{award_name}** {', '.join(winners_list)}")
+        else:
+            award_texts.append(f"**{award_name}** 無")
 
-# 用 "｜" 分隔橫向排版
-st.markdown(" ｜ ".join(award_texts))
+    # 用 "｜" 分隔橫向排版
+    st.markdown(" ｜ ".join(award_texts))
 
-
-
-    # Leaderboard
+    # === Leaderboard ===
     st.subheader("📊 Leaderboard 排名表")
     df_leader = pd.DataFrame({
         "球員": list(winners["gross"].keys()),
@@ -182,7 +183,7 @@ st.markdown(" ｜ ".join(award_texts))
     df_leader["淨桿排名"] = df_leader["淨桿"].rank(method="min").astype(int)
     st.dataframe(df_leader.sort_values("淨桿排名"))
 
-    # 匯出功能
+    # === 匯出功能 ===
     st.subheader("💾 匯出比賽結果")
     csv_buffer = io.StringIO()
     df_leader.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
