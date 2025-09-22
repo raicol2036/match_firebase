@@ -77,55 +77,55 @@ if player_file and course_file:
         return birdies
 
     def get_winners(scores):
-    gross = calculate_gross(scores)
-    net = calculate_net(gross)
+        gross = calculate_gross(scores)
+        net = calculate_net(gross)
 
-    # === 總桿排序 ===
-    gross_sorted = sorted(gross.items(), key=lambda x: x[1])
+        # === 總桿排序 ===
+        gross_sorted = sorted(gross.items(), key=lambda x: x[1])
 
-    # 總桿冠軍：排除曾經得過冠軍
-    gross_champ = None
-    for p, _ in gross_sorted:
-        if players.loc[players["name"]==p,"champion"].values[0] == "No":
-            gross_champ = p
-            break
+        # 總桿冠軍：排除曾經得過冠軍
+        gross_champ = None
+        for p, _ in gross_sorted:
+            if players.loc[players["name"]==p,"champion"].values[0] == "No":
+                gross_champ = p
+                break
 
     # 總桿亞軍：排除曾經得過亞軍
-    gross_runner = None
-    for p, _ in gross_sorted:
-        if p != gross_champ and players.loc[players["name"]==p,"runnerup"].values[0] == "No":
-            gross_runner = p
-            break
+        gross_runner = None
+        for p, _ in gross_sorted:
+            if p != gross_champ and players.loc[players["name"]==p,"runnerup"].values[0] == "No":
+                gross_runner = p
+                break
 
     # === 淨桿冠亞軍 (排除總桿前兩名) ===
-    exclude_players = [gross_champ, gross_runner]
-    net_candidates = {p:s for p,s in net.items() if p not in exclude_players}
-    net_sorted = sorted(net_candidates.items(), key=lambda x: x[1])
+        exclude_players = [gross_champ, gross_runner]
+        net_candidates = {p:s for p,s in net.items() if p not in exclude_players}
+        net_sorted = sorted(net_candidates.items(), key=lambda x: x[1])
 
-    net_champ, net_runner = None, None
-    if len(net_sorted) > 0: net_champ = net_sorted[0][0]
-    if len(net_sorted) > 1: net_runner = net_sorted[1][0]
+        net_champ, net_runner = None, None
+        if len(net_sorted) > 0: net_champ = net_sorted[0][0]
+        if len(net_sorted) > 1: net_runner = net_sorted[1][0]
 
     # 更新 handicap
-    if net_champ:
-        players.loc[players["name"]==net_champ,"handicap"] -= 2
-    if net_runner:
-        players.loc[players["name"]==net_runner,"handicap"] -= 1
+        if net_champ:
+            players.loc[players["name"]==net_champ,"handicap"] -= 2
+        if net_runner:
+            players.loc[players["name"]==net_runner,"handicap"] -= 1
 
-    birdies = find_birdies(scores)
+        birdies = find_birdies(scores)
 
-    return {
-        "gross": gross,
-        "net": net,
-        "gross_champion": gross_champ,
-        "gross_runnerup": gross_runner,
-        "net_champion": net_champ,
-        "net_runnerup": net_runner,
-        "birdies": birdies
-    }
+        return {
+            "gross": gross,
+            "net": net,
+            "gross_champion": gross_champ,
+            "gross_runnerup": gross_runner,
+            "net_champion": net_champ,
+            "net_runnerup": net_runner,
+            "birdies": birdies
+        }
 
     # === 開始計算 ===
-    if st.button("開始計算"):
+        if st.button("開始計算"):
         winners = get_winners(scores)
 
         st.subheader("🏆 比賽結果")
