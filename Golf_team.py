@@ -116,49 +116,52 @@ def get_winners(scores):
 # === 4. 獎項選擇 ===
 st.header("4. 獎項選擇")
 
-col1, col2 = st.columns(2)
-
-with col1:
-    long_drive = st.multiselect("🏌️‍♂️ 遠距獎 (1–2人)", players["name"].values, max_selections=2, key="long_drive")
-    near1 = st.multiselect("🎯 一近洞獎 (1–2人)", players["name"].values, max_selections=2, key="near1")
-    near2 = st.multiselect("🎯 二近洞獎 (1–2人)", players["name"].values, max_selections=2, key="near2")
-
-with col2:
-    near3 = st.multiselect("🎯 三近洞獎 (1–2人)", players["name"].values, max_selections=2, key="near3")
-
-# === N近洞獎 (雙模式) ===
-st.subheader("🎯 N近洞獎")
-
-allow_repeat = st.checkbox("允許同一球員重複得獎")
-
-if not allow_repeat:
-    # 模式 1：multiselect (簡單版，最多 18 人，無法重複)
-    n_near_awards = st.multiselect(
-        "選擇獲得 N近洞獎的球員 (最多18人，無重複)",
-        players["name"].values,
-        max_selections=18,
-        key="n_near_awards_multi"
-    )
-else:
-    # 模式 2：18 個下拉選單 (可重複)
-    n_near_awards = []
-    num_slots = 18  # 最多18次
-    cols_per_row = 4  # 每行顯示4個
-
-    for i in range(0, num_slots, cols_per_row):
+# 共用方法：生成多個下拉框
+def award_select(title, key_prefix, slots=2, cols_per_row=2):
+    st.subheader(title)
+    awards = []
+    for i in range(0, slots, cols_per_row):
         cols = st.columns(cols_per_row)
         for j in range(cols_per_row):
             idx = i + j + 1
-            if idx > num_slots:
+            if idx > slots:
                 break
             with cols[j]:
-                n_near_player = st.selectbox(
-                    f"第{idx}次",
+                player = st.selectbox(
+                    f"{title} - 第{idx}人",
                     ["無"] + list(players["name"].values),
-                    key=f"n_near_{idx}"
+                    key=f"{key_prefix}_{idx}"
                 )
-                if n_near_player != "無":
-                    n_near_awards.append(n_near_player)
+                if player != "無":
+                    awards.append(player)
+    return awards
+
+# 四個獎項：每個最多 2 人
+long_drive = award_select("🏌️‍♂️ 遠距獎", "long_drive", slots=2)
+near1 = award_select("🎯 一近洞獎", "near1", slots=2)
+near2 = award_select("🎯 二近洞獎", "near2", slots=2)
+near3 = award_select("🎯 三近洞獎", "near3", slots=2)
+
+# N近洞獎：最多 18 人，每行 4 個
+st.subheader("🎯 N近洞獎 (最多18次，可重複)")
+n_near_awards = []
+num_slots = 18
+cols_per_row = 4
+
+for i in range(0, num_slots, cols_per_row):
+    cols = st.columns(cols_per_row)
+    for j in range(cols_per_row):
+        idx = i + j + 1
+        if idx > num_slots:
+            break
+        with cols[j]:
+            player = st.selectbox(
+                f"第{idx}次",
+                ["無"] + list(players["name"].values),
+                key=f"n_near_{idx}"
+            )
+            if player != "無":
+                n_near_awards.append(player)
 
 # 整合獎項
 awards = {
@@ -168,6 +171,7 @@ awards = {
     "三近洞獎": near3,
     "N近洞獎": n_near_awards,
 }
+
 
 # === 開始計算 ===
 if st.button("開始計算"):
