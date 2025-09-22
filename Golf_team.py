@@ -179,4 +179,3 @@ if st.button("開始計算"):
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     else:
         st.info("📥 請先上傳 players.csv 與 course.csv")
-        )
