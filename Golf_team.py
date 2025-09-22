@@ -155,7 +155,7 @@ near2 = award_select("🎯 二近洞獎", "near2", slots=2)
 near3 = award_select("🎯 三近洞獎", "near3", slots=2)
 
 # N近洞獎：最多 18 人，每行 4 個
-st.subheader("🎯 N近洞獎 (最多18次，可重複)")
+st.subheader("🎯 N近洞獎 (最多18位，可重複)")
 n_near_awards = []
 num_slots = 18
 cols_per_row = 4
