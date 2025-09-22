@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.title("🏌️ 球隊成績管理系統 (18碼固定載入版)")
+st.title("🏌️ 球隊成績管理系統 Ver1.0")
 
 # === 直接載入 CSV ===
 players = pd.read_csv("players.csv", encoding="utf-8-sig")
