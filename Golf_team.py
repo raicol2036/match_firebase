@@ -1,10 +1,19 @@
 import streamlit as st
 import pandas as pd
+import chardet
 import io
 
+# === 自動偵測編碼函式 ===
+def read_csv_auto(path):
+    with open(path, "rb") as f:
+        raw = f.read()
+        result = chardet.detect(raw)
+        encoding = result["encoding"] or "utf-8"
+    return pd.read_csv(io.BytesIO(raw), encoding=encoding)
+
 # 載入資料
-players = pd.read_csv("players.csv", encoding="big5")
-courses = pd.read_csv("course.csv", encoding="big5")
+players = read_csv_auto("players.csv")
+courses = read_csv_auto("course.csv")
 
 st.title("🏌️ 球隊成績管理系統")
 
@@ -28,6 +37,9 @@ if selected_players:
         for i in range(9):
             val = cols2[i].number_input(f"H{i+10}", min_value=1, max_value=15, step=1, key=f"{p}_b{i+10}")
             scores[p].append(val)
+
+# === 下面的計算 & Leaderboard 保持不變 ===
+
 
 # 計算邏輯
 def calculate_gross(scores):
