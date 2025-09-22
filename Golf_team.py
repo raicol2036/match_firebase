@@ -29,11 +29,22 @@ selected_players = []
 
 for i in range(num_players):
     st.subheader(f"球員 {i+1}")
-    player_name = st.selectbox(f"選擇球員 {i+1}", players["name"].values, key=f"player_{i}")
-    selected_players.append(player_name)
+    cols = st.columns([1, 2])  # 左1份寬度，右2份寬度
 
-    # 輸入限制：只能輸入 18 位數字
-    score_str = st.text_input(f"{player_name} 的成績 (18位數字)", key=f"scores_{i}", max_chars=18)
+    with cols[0]:
+        player_name = st.selectbox(
+            f"選擇球員 {i+1}",
+            players["name"].values,
+            key=f"player_{i}"
+        )
+        selected_players.append(player_name)
+
+    with cols[1]:
+        score_str = st.text_input(
+            f"{player_name} 的成績 (18位數字)",
+            key=f"scores_{i}",
+            max_chars=18
+        )
 
     if score_str:
         if score_str.isdigit() and len(score_str) == 18:
@@ -43,6 +54,7 @@ for i in range(num_players):
             scores[player_name] = []
     else:
         scores[player_name] = []
+
 
 # === 計算函式 ===
 def calculate_gross(scores):
