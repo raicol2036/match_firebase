@@ -1,42 +1,71 @@
 import streamlit as st
 import pandas as pd
-import chardet
-import io
-
-# === 自動偵測編碼函式 ===
-def read_csv_auto(path):
-    with open(path, "rb") as f:
-        raw = f.read()
-        result = chardet.detect(raw)
-        encoding = result["encoding"] or "utf-8"
-    return pd.read_csv(io.BytesIO(raw), encoding=encoding)
-
-# 載入資料
-players = read_csv_auto("players.csv")
-courses = read_csv_auto("course.csv")
 
 st.title("🏌️ 球隊成績管理系統")
 
-# 選擇參賽球員
-st.header("1. 選擇參賽球員")
-player_options = list(players["name"].values)
-selected_players = st.multiselect("選擇球員 (最多24名)", player_options, max_selections=24)
+# === 1. 上傳 CSV (只需一次) ===
+st.header("1. 上傳資料檔案")
 
-# 建立成績輸入區
-st.header("2. 輸入成績 (最多18洞)")
-scores = {}
-if selected_players:
-    for p in selected_players:
-        scores[p] = []
-        st.subheader(f"球員：{p}")
-        cols = st.columns(9)  # 前九
-        for i in range(9):
-            val = cols[i].number_input(f"H{i+1}", min_value=1, max_value=15, step=1, key=f"{p}_f{i+1}")
-            scores[p].append(val)
-        cols2 = st.columns(9)  # 後九
-        for i in range(9):
-            val = cols2[i].number_input(f"H{i+10}", min_value=1, max_value=15, step=1, key=f"{p}_b{i+10}")
-            scores[p].append(val)
+def read_csv_safe(file):
+    encodings = ["utf-8-sig", "utf-8", "big5", "cp950"]
+    for enc in encodings:
+        try:
+            return pd.read_csv(file, encoding=enc)
+        except Exception:
+            file.seek(0)  # 重設檔案指標
+            continue
+    st.error("❌ 無法讀取檔案，請確認格式與編碼")
+    return pd.DataFrame()
+
+# 初始化 session_state
+if "players" not in st.session_state:
+    st.session_state["players"] = None
+if "courses" not in st.session_state:
+    st.session_state["courses"] = None
+
+# 檔案上傳
+player_file = st.file_uploader("📂 上傳球員資料 (players.csv)", type=["csv"])
+course_file = st.file_uploader("📂 上傳球場資料 (course.csv)", type=["csv"])
+
+if player_file is not None:
+    st.session_state["players"] = read_csv_safe(player_file)
+if course_file is not None:
+    st.session_state["courses"] = read_csv_safe(course_file)
+
+players = st.session_state["players"]
+courses = st.session_state["courses"]
+
+if players is not None and courses is not None:
+    # === 確認欄位正確 ===
+    if not set(["name","handicap","champion","runnerup"]).issubset(players.columns):
+        st.error("❌ players.csv 欄位必須包含: name, handicap, champion, runnerup")
+        st.stop()
+    if not set(["course_name","area","hole","hcp","par"]).issubset(courses.columns):
+        st.error("❌ course.csv 欄位必須包含: course_name, area, hole, hcp, par")
+        st.stop()
+
+    st.success("✅ 檔案載入成功！(已暫存，不需再次上傳)")
+
+    # === 2. 選擇參賽球員 ===
+    st.header("2. 選擇參賽球員")
+    player_options = list(players["name"].values)
+    selected_players = st.multiselect("選擇球員 (最多24名)", player_options, max_selections=24)
+
+    # === 3. 輸入成績 ===
+    st.header("3. 輸入成績 (最多18洞)")
+    scores = {}
+    if selected_players:
+        for p in selected_players:
+            scores[p] = []
+            st.subheader(f"球員：{p}")
+            cols = st.columns(9)  # 前九
+            for i in range(9):
+                val = cols[i].number_input(f"H{i+1}", min_value=1, max_value=15, step=1, key=f"{p}_f{i+1}")
+                scores[p].append(val)
+            cols2 = st.columns(9)  # 後九
+            for i in range(9):
+                val = cols2[i].number_input(f"H{i+10}", min_value=1, max_value=15, step=1, key=f"{p}_b{i+10}")
+                scores[p].append(val)
 
 # === 下面的計算 & Leaderboard 保持不變 ===
 
@@ -148,4 +177,6 @@ if st.button("開始計算"):
             data=excel_buffer.getvalue(),
             file_name="leaderboard.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    else:
+        st.info("📥 請先上傳 players.csv 與 course.csv")
         )
