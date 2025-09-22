@@ -185,10 +185,21 @@ if st.button("開始計算"):
 
     if winners["birdies"]:
         st.write("✨ Birdie 紀錄：")
+    
+        # 整理成 {球員: [洞號,...]}
+        birdie_dict = {}
         for player, hole in winners["birdies"]:
-            st.write(f"- {player} 在第 {hole} 洞")
+            if player not in birdie_dict:
+                birdie_dict[player] = []
+            birdie_dict[player].append(hole)
+    
+        # 輸出結果：同一球員的洞號合併
+        for player, holes in birdie_dict.items():
+            hole_text = "/".join([f"第{h}洞" for h in holes])
+            st.write(f"- {player}  {hole_text}")
     else:
         st.write("無 Birdie 紀錄")
+
 
     # === 特殊獎項結果 ===
     st.subheader("🏅 特殊獎項結果")
