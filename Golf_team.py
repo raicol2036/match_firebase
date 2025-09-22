@@ -112,9 +112,39 @@ def get_winners(scores):
         "net_runnerup": net_runner,
         "birdies": birdies
     }
+    # === 4. 獎項選擇 ===
+st.header("4. 獎項選擇")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    long_drive = st.multiselect("🏌️‍♂️ 遠距獎 (1–2人)", players["name"].values, max_selections=2, key="long_drive")
+    near1 = st.multiselect("🎯 一近洞獎 (1–2人)", players["name"].values, max_selections=2, key="near1")
+    near2 = st.multiselect("🎯 二近洞獎 (1–2人)", players["name"].values, max_selections=2, key="near2")
+
+with col2:
+    near3 = st.multiselect("🎯 三近洞獎 (1–2人)", players["name"].values, max_selections=2, key="near3")
+    nearN = st.multiselect("🎯 N近洞獎 (最多18人，可複選)", players["name"].values, max_selections=18, key="nearN")
+
+# 把結果存進 dict，方便之後匯出或顯示
+awards = {
+    "遠距獎": long_drive,
+    "一近洞獎": near1,
+    "二近洞獎": near2,
+    "三近洞獎": near3,
+    "N近洞獎": nearN,
+}
+
 
 # === 開始計算 ===
 if st.button("開始計算"):
+    st.subheader("🏅 特殊獎項結果")
+for award_name, winners_list in awards.items():
+    if winners_list:
+        st.write(f"{award_name}: {', '.join(winners_list)}")
+    else:
+        st.write(f"{award_name}: 無")
+
     winners = get_winners(scores)
 
     st.subheader("🏆 比賽結果")
