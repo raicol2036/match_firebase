@@ -107,11 +107,15 @@ def get_winners(scores):
     if len(net_sorted) > 0: net_champ = net_sorted[0][0]
     if len(net_sorted) > 1: net_runner = net_sorted[1][0]
 
-    # 更新 handicap
+    # 計算差點更新（不直接修改 players）
+    hcp_updates = {p: 0 for p in gross.keys()}
     if net_champ:
-        players.loc[players["name"]==net_champ,"handicap"] -= 2
+        hcp_updates[net_champ] = -2
     if net_runner:
-        players.loc[players["name"]==net_runner,"handicap"] -= 1
+        hcp_updates[net_runner] = -1
+
+    hcp_new = {p: int(players.loc[players["name"] == p, "handicap"].values[0]) + hcp_updates[p] for p in gross.keys()}
+
 
     birdies = find_birdies(scores)
 
@@ -123,6 +127,7 @@ def get_winners(scores):
         "net_champion": net_champ,
         "net_runnerup": net_runner,
         "birdies": birdies
+        "hcp_new": hcp_new  # 👈 新增
     }
 
 # === 4. 獎項選擇 ===
@@ -226,19 +231,11 @@ if st.button("開始計算"):
     st.markdown(" ｜ ".join(award_texts))
 
     # === Leaderboard ===
+    # Leaderboard
     st.subheader("📊 Leaderboard 排名表")
 
-    # 取出原始差點 (不被修改)
     player_hcps = {p: int(players.loc[players["name"] == p, "handicap"].values[0]) for p in winners["gross"].keys()}
 
-    # 計算差點更新
-    hcp_new = {p: player_hcps[p] for p in winners["gross"].keys()}
-    if winners["net_champion"]:
-        hcp_new[winners["net_champion"]] = player_hcps[winners["net_champion"]] - 2
-    if winners["net_runnerup"]:
-        hcp_new[winners["net_runnerup"]] = player_hcps[winners["net_runnerup"]] - 1
-
-    # 建立 DataFrame
     df_leader = pd.DataFrame({
         "球員": list(winners["gross"].keys()),
         "原始差點": [player_hcps[p] for p in winners["gross"].keys()],
@@ -246,9 +243,8 @@ if st.button("開始計算"):
         "淨桿": [winners["net"][p] for p in winners["gross"].keys()],
         "總桿排名": pd.Series(winners["gross"]).rank(method="min").astype(int).values,
         "淨桿排名": pd.Series(winners["net"]).rank(method="min").astype(int).values,
-        "差點更新": [hcp_new[p] for p in winners["gross"].keys()]
+        "差點更新": [winners["hcp_new"][p] for p in winners["gross"].keys()]
     })
-
 
     # 顯示
     st.dataframe(df_leader.sort_values("淨桿排名"))
