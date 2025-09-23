@@ -17,7 +17,22 @@ if not set(["course_name","area","hole","hcp","par"]).issubset(courses.columns):
     st.stop()
 
 st.success("✅ CSV 已成功載入")
+st.header("0. 比賽設定")
 
+# 選擇球場
+course_names = courses["course_name"].unique()
+selected_course = st.selectbox("🏌️‍♂️ 選擇球場", course_names)
+
+# 選擇前九 / 後九
+course_area = st.radio("選擇比賽區域", ["前九", "後九", "全18洞"])
+
+# 過濾球場資料
+if course_area == "全18洞":
+    course_selected = courses[(courses["course_name"] == selected_course)]
+else:
+    course_selected = courses[(courses["course_name"] == selected_course) & (courses["area"] == course_area)]
+
+st.success(f"✅ 已選擇球場：{selected_course} - {course_area}")
 # === 設定比賽人數 ===
 st.header("1. 設定比賽人數")
 num_players = st.number_input("請輸入參賽人數 (1~24)", min_value=1, max_value=24, value=4, step=1)
@@ -67,14 +82,15 @@ def calculate_net(gross_scores):
         net_scores[p] = gross - hcp
     return net_scores
 
-def find_birdies(scores):
+def find_birdies(scores, course_selected):
     birdies = []
     for p, s in scores.items():
         for i, score in enumerate(s):
-            if i < len(courses):
-                par = courses.iloc[i]["par"]
+            if i < len(course_selected):
+                par = course_selected.iloc[i]["par"]
                 if score == par - 1:
-                    birdies.append((p, i+1))
+                    hole_num = course_selected.iloc[i]["hole"]
+                    birdies.append((p, hole_num))
     return birdies
 
 def get_winners(scores):
