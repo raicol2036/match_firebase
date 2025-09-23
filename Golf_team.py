@@ -146,7 +146,7 @@ def get_winners(scores):
     hcp_new = {p: int(players.loc[players["name"] == p, "handicap"].values[0]) + hcp_updates[p] for p in gross.keys()}
 
 
-    birdies = find_birdies(scores)
+    birdies = find_birdies(scores, course_selected)
 
     return {
         "gross": gross,
@@ -221,7 +221,7 @@ awards = {
 
 # === 開始計算 ===
 if st.button("開始計算"):
-    winners = get_winners(scores)
+    winners = get_winners(scores, course_selected)
 
     st.subheader("🏆 比賽結果")
 
