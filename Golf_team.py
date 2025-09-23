@@ -126,8 +126,8 @@ def get_winners(scores):
         "gross_runnerup": gross_runner,
         "net_champion": net_champ,
         "net_runnerup": net_runner,
-        "birdies": birdies
-        "hcp_new": hcp_new  # 👈 新增
+        "birdies": birdies,
+        "hcp_new": hcp_new,  # 👈 新增
     }
 
 # === 4. 獎項選擇 ===
