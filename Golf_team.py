@@ -105,7 +105,7 @@ def find_birdies(scores, course_selected):
                     birdies.append((p, hole_num))
     return birdies
 
-def get_winners(scores):
+def get_winners(scores, course_selected):
     gross = calculate_gross(scores)
     net = calculate_net(gross)
     birdies = find_birdies(scores, course_selected)
