@@ -202,7 +202,7 @@ for i in range(0, num_slots, cols_per_row):
             break
         with cols[j]:
             player = st.selectbox(
-                f"第{idx}次",
+                f"第{idx}位",
                 ["無"] + list(players["name"].values),
                 key=f"n_near_{idx}"
             )
