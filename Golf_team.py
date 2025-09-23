@@ -195,10 +195,19 @@ if st.button("開始計算"):
     winners = get_winners(scores)
 
     st.subheader("🏆 比賽結果")
-    st.write(f"總桿冠軍: {winners['gross_champion']}")
-    st.write(f"總桿亞軍: {winners['gross_runnerup']}")
-    st.write(f"淨桿冠軍: {winners['net_champion']}")
-    st.write(f"淨桿亞軍: {winners['net_runnerup']}")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"🏅 總桿冠軍: {winners['gross_champion']}")
+    with col2:
+        st.write(f"🥈 總桿亞軍: {winners['gross_runnerup']}")
+
+    col3, col4 = st.columns(2)
+    with col3:
+        st.write(f"🏅 淨桿冠軍: {winners['net_champion']}")
+    with col4:
+        st.write(f"🥈 淨桿亞軍: {winners['net_runnerup']}")
+
 
     if winners["birdies"]:
         st.write("✨ Birdie 紀錄：")
