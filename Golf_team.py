@@ -96,6 +96,7 @@ def find_birdies(scores, course_selected):
 def get_winners(scores):
     gross = calculate_gross(scores)
     net = calculate_net(gross)
+    birdies = find_birdies(scores, course_selected)
 
     # === 總桿排序 ===
     gross_sorted = sorted(gross.items(), key=lambda x: x[1])
