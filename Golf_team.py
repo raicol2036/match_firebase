@@ -219,19 +219,30 @@ if st.button("開始計算"):
 
 
     # === 特殊獎項結果 ===
-    st.subheader("🏅 特殊獎項結果")
-    award_texts = []
-    for award_name, winners_list in awards.items():
-        if winners_list:
-            award_texts.append(f"**{award_name}** {', '.join(winners_list)}")
-        else:
-            award_texts.append(f"**{award_name}** 無")
+    from collections import Counter
 
-    # 用 "｜" 分隔橫向排版
+    def format_awards(awards_dict):
+        award_texts = []
+        for award_name, winners_list in awards_dict.items():
+            if winners_list:
+                if award_name == "N近洞獎":
+                    # 計數
+                    counts = Counter(winners_list)
+                    formatted = " ".join([f"{name}*{cnt}" for name, cnt in counts.items()])
+                    award_texts.append(f"**{award_name}** {formatted}")
+                else:
+                    award_texts.append(f"**{award_name}** {', '.join(winners_list)}")
+            else:
+                award_texts.append(f"**{award_name}** 無")
+        return award_texts
+
+    # === 特殊獎項結果 ===
+    st.subheader("🏅 特殊獎項結果")
+    award_texts = format_awards(awards)
     st.markdown(" ｜ ".join(award_texts))
 
+
     # === Leaderboard ===
-    # Leaderboard
     st.subheader("📊 Leaderboard 排名表")
 
     player_hcps = {p: int(players.loc[players["name"] == p, "handicap"].values[0]) for p in winners["gross"].keys()}
