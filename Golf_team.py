@@ -26,21 +26,24 @@ selected_course = st.selectbox("🏌️‍♂️ 選擇球場", course_names)
 # 篩選出該球場的資料
 course_filtered = courses[courses["course_name"] == selected_course]
 
-# Step 2: 選擇前九洞區域
-front_options = course_filtered[course_filtered["hole"] <= 9]["area"].unique()
-selected_front = st.selectbox("前九洞區域", front_options)
+# 取出所有區域 (前九/後九都可選)
+all_areas = course_filtered["area"].unique()
 
-# Step 3: 選擇後九洞區域
-back_options = course_filtered[course_filtered["hole"] > 9]["area"].unique()
+# Step 2: 選擇前九洞區域
+selected_front = st.selectbox("前九洞區域", all_areas)
+
+# Step 3: 選擇後九洞區域 (排除已選的前九)
+back_options = [a for a in all_areas if a != selected_front]
 selected_back = st.selectbox("後九洞區域", back_options)
 
-# 依照選擇組合出完整比賽用的球場
+# 最終組合
 course_selected = pd.concat([
     course_filtered[(course_filtered["area"] == selected_front) & (course_filtered["hole"] <= 9)],
     course_filtered[(course_filtered["area"] == selected_back) & (course_filtered["hole"] > 9)]
 ])
 
 st.success(f"✅ 已選擇：{selected_course} / 前九: {selected_front} / 後九: {selected_back}")
+
 
 # === 設定比賽人數 ===
 st.header("1. 設定比賽人數")
