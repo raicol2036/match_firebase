@@ -19,20 +19,29 @@ if not set(["course_name","area","hole","hcp","par"]).issubset(courses.columns):
 st.success("✅ CSV 已成功載入")
 st.header("0. 比賽設定")
 
-# 選擇球場
+# Step 1: 選擇球場
 course_names = courses["course_name"].unique()
 selected_course = st.selectbox("🏌️‍♂️ 選擇球場", course_names)
 
-# 選擇前九 / 後九
-course_area = st.radio("選擇比賽區域", ["前九", "後九", "全18洞"])
+# 篩選出該球場的資料
+course_filtered = courses[courses["course_name"] == selected_course]
 
-# 過濾球場資料
-if course_area == "全18洞":
-    course_selected = courses[(courses["course_name"] == selected_course)]
-else:
-    course_selected = courses[(courses["course_name"] == selected_course) & (courses["area"] == course_area)]
+# Step 2: 選擇前九洞區域
+front_options = course_filtered[course_filtered["hole"] <= 9]["area"].unique()
+selected_front = st.selectbox("前九洞區域", front_options)
 
-st.success(f"✅ 已選擇球場：{selected_course} - {course_area}")
+# Step 3: 選擇後九洞區域
+back_options = course_filtered[course_filtered["hole"] > 9]["area"].unique()
+selected_back = st.selectbox("後九洞區域", back_options)
+
+# 依照選擇組合出完整比賽用的球場
+course_selected = pd.concat([
+    course_filtered[(course_filtered["area"] == selected_front) & (course_filtered["hole"] <= 9)],
+    course_filtered[(course_filtered["area"] == selected_back) & (course_filtered["hole"] > 9)]
+])
+
+st.success(f"✅ 已選擇：{selected_course} / 前九: {selected_front} / 後九: {selected_back}")
+
 # === 設定比賽人數 ===
 st.header("1. 設定比賽人數")
 num_players = st.number_input("請輸入參賽人數 (1~24)", min_value=1, max_value=24, value=4, step=1)
