@@ -38,9 +38,9 @@ selected_back = st.selectbox("後九洞區域", back_options)
 
 # 最終組合
 course_selected = pd.concat([
-    course_filtered[(course_filtered["area"] == selected_front) & (course_filtered["hole"] <= 9)],
-    course_filtered[(course_filtered["area"] == selected_back) & (course_filtered["hole"] > 9)]
-])
+    course_filtered[course_filtered["area"] == selected_front].sort_values("hole"),
+    course_filtered[course_filtered["area"] == selected_back].sort_values("hole")
+]).reset_index(drop=True)
 
 st.success(f"✅ 已選擇：{selected_course} / 前九: {selected_front} / 後九: {selected_back}")
 
