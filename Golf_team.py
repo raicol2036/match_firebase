@@ -187,26 +187,27 @@ near2 = award_select("🎯 二近洞獎", "near2", slots=2)
 near3 = award_select("🎯 三近洞獎", "near3", slots=2)
 
 # N近洞獎：最多 18 人，每行 4 個
-st.subheader("🎯 N近洞獎 (最多18位，可重複)")
+# N近洞獎：先輸入要設幾個，再動態生成
+st.subheader("🎯 N近洞獎 (可重複)")
+num_n_near = st.number_input("請輸入要設幾個 N近洞獎 (最多18)", min_value=0, max_value=18, value=0, step=1)
+
 n_near_awards = []
-num_slots = 18
 cols_per_row = 4
 
-for i in range(0, num_slots, cols_per_row):
+for i in range(0, num_n_near, cols_per_row):
     cols = st.columns(cols_per_row)
     for j in range(cols_per_row):
         idx = i + j + 1
-        if idx > num_slots:
+        if idx > num_n_near:
             break
         with cols[j]:
             player = st.selectbox(
-                f"第{idx}位",
+                f"N近洞獎 - 第{idx}位",
                 ["無"] + list(players["name"].values),
                 key=f"n_near_{idx}"
             )
             if player != "無":
                 n_near_awards.append(player)
-
 # 整合獎項
 awards = {
     "遠距獎": long_drive,
