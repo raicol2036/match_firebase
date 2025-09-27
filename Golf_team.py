@@ -42,9 +42,7 @@ course_selected = pd.concat([
     course_filtered[course_filtered["area"] == selected_back].sort_values("hole")
 ]).reset_index(drop=True)
 
-st.success(f"✅ 已選擇：{selected_course} / 前九: {selected_front} / 後九: {selected_back}")
-
-
+st.success(f"✅ 已選擇：{selected_course} / 前九: {selected_front} / 後九: {selected_back} （共 {len(course_selected)} 洞）")
 # === 設定比賽人數 ===
 st.header("1. 設定比賽人數")
 num_players = st.number_input("請輸入參賽人數 (1~24)", min_value=1, max_value=24, value=4, step=1)
